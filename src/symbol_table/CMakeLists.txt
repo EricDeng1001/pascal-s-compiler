@@ -9,7 +9,7 @@ find_package(Threads REQUIRED)
 
 include_directories(${GTEST_INCLUDE_DIRS})
 
-add_executable(Tests symbol_table.cc test.cc)
+add_executable(Tests test.cc)
 
 target_link_libraries(Tests ${GTEST_BOTH_LIBRARIES})
 target_link_libraries(Tests ${CMAKE_THREAD_LIBS_INIT})

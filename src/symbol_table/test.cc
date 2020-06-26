@@ -7,8 +7,8 @@ using namespace PascalSToCPP;
 
 Type GetRandomType(int depth = 0)
 {
-    static constexpr int basic_type_min = BasicTypeToInt(BasicType::FIRST_VAL);
-    static constexpr int basic_type_max = BasicTypeToInt(BasicType::LAST_VAL);
+    static constexpr int basic_type_min = EnumToInt(BasicType::FIRST_VAL);
+    static constexpr int basic_type_max = EnumToInt(BasicType::LAST_VAL);
     static constexpr int null_ret_type = basic_type_max + 1;
     static constexpr float RussianRoulette = 0.5;
 
@@ -61,7 +61,7 @@ TEST(Test, SymbolBuilderTestBasic)
     test_type.type = BasicType::INTEGER;
     test_type.ret_type = BasicType::BOOLEAN;
 
-    auto symbol = getSymbolBuilder().addName("test")
+    auto symbol = Symbol::getSymbolBuilder().addName("test")
                                           .setBasicType(BasicType::INTEGER)
                                           .setConst(true)
                                           .setRef(true)
@@ -83,7 +83,7 @@ TEST(Test, SymbolBuilderTestBasic)
 TEST(Test, SymbolBuilderTestPeriod)
 {
     std::deque<std::pair<int, int>> test_periods{{1,2}, {-1,3}, {3,4}, {5,8}};
-    auto symbol = getSymbolBuilder().addPeriod({1,2})
+    auto symbol = Symbol::getSymbolBuilder().addPeriod({1,2})
                                .addPeriod({-1,3})
                                .addPeriod({3,4})
                                .addPeriod({5,8})
@@ -95,7 +95,7 @@ TEST(Test, SymbolBuilderTestPeriod)
     for (uint i = 0; i < test_periods.size(); i++)
         EXPECT_EQ(symbol.type.periods[i], test_periods[i]);
 
-    symbol = getSymbolBuilder().addPeriod(4, {5, 8})
+    symbol = Symbol::getSymbolBuilder().addPeriod(4, {5, 8})
                                .addPeriod(2, {-1, 3})
                                .addPeriod(3, {3, 4})
                                .addPeriod(1, {1, 2})
@@ -107,7 +107,7 @@ TEST(Test, SymbolBuilderTestPeriod)
     for (uint i = 0; i < test_periods.size(); i++)
         EXPECT_EQ(symbol.type.periods[i], test_periods[i]);
 
-    symbol = getSymbolBuilder().addPeriod(4, 5, 8)
+    symbol = Symbol::getSymbolBuilder().addPeriod(4, 5, 8)
                                .addPeriod(2, -1, 3)
                                .addPeriod(3, 3, 4)
                                .addPeriod(1, 1, 2)
@@ -129,7 +129,7 @@ TEST(Test, SymbolBuilderTestAddArgs)
     test_types[3].type = BasicType::CHAR;
     test_types[4].type = BasicType::REAL;
 
-    auto symbol = getSymbolBuilder().addArg(BasicType::INTEGER)
+    auto symbol = Symbol::getSymbolBuilder().addArg(BasicType::INTEGER)
                                .addArg(BasicType::BOOLEAN)
                                .addArg(BasicType::CALLABLE)
                                .addArg(BasicType::CHAR)
@@ -144,7 +144,7 @@ TEST(Test, SymbolBuilderTestAddArgs)
     for (uint i = 0; i < test_types.size(); i++)
         EXPECT_EQ(symbol.type.args[i], test_types[i]); 
     
-    symbol = getSymbolBuilder().addArg(test_types[0])
+    symbol = Symbol::getSymbolBuilder().addArg(test_types[0])
                                .addArg(test_types[1])
                                .addArg(test_types[2])
                                .addArg(test_types[3])
@@ -159,7 +159,7 @@ TEST(Test, SymbolBuilderTestAddArgs)
     for (uint i = 0; i < test_types.size(); i++)
         EXPECT_EQ(symbol.type.args[i], test_types[i]);
     
-    symbol = getSymbolBuilder().addArg(2, BasicType::BOOLEAN)
+    symbol = Symbol::getSymbolBuilder().addArg(2, BasicType::BOOLEAN)
                                .addArg(4, BasicType::CHAR)
                                .addArg(3, BasicType::CALLABLE)
                                .addArg(5, BasicType::REAL)
@@ -174,7 +174,7 @@ TEST(Test, SymbolBuilderTestAddArgs)
     for (uint i = 0; i < test_types.size(); i++)
         EXPECT_EQ(symbol.type.args[i], test_types[i]); 
 
-    symbol = getSymbolBuilder().addArg(3, test_types[2])
+    symbol = Symbol::getSymbolBuilder().addArg(3, test_types[2])
                                .addArg(4, test_types[3])
                                .addArg(1, test_types[0])
                                .addArg(5, test_types[4])
@@ -192,7 +192,7 @@ TEST(Test, SymbolBuilderTestAddArgs)
 
 TEST(Test, SymbolBuilderTestBuildArr)
 {
-    auto builder = getSymbolBuilder();
+    auto builder = Symbol::getSymbolBuilder();
     builder.addName("test");
     builder.setBasicType(BasicType::CALLABLE);
     builder.setConst(true);
@@ -424,7 +424,7 @@ TEST_F(SymbolsTableTest, SymbolTestAddGetLocalSymbolTest)
 
     // local symbol and global symbol with same name
     {
-        auto temp_symbol = getSymbolBuilder().addName("b")
+        auto temp_symbol = Symbol::getSymbolBuilder().addName("b")
                               .setBasicType(BasicType::BOOLEAN)
                               .Build();
         EXPECT_NE(temp_symbol.type, Type());
@@ -440,7 +440,7 @@ TEST_F(SymbolsTableTest, SymbolTestAddGetLocalSymbolTest)
         EXPECT_EQ(table.getLocalSymbols(0).size(), 1);
     }
 
-    EXPECT_EQ(table.InsertSymbol(getSymbolBuilder().addName("bbb").Build()).first, true);
+    EXPECT_EQ(table.InsertSymbol(Symbol::getSymbolBuilder().addName("bbb").Build()).first, true);
     EXPECT_EQ(table.ExitScope(), true);
     EXPECT_EQ(table.isInScope("bbb"), false);
 }
@@ -448,14 +448,14 @@ TEST_F(SymbolsTableTest, SymbolTestAddGetLocalSymbolTest)
 TEST(ArgTest, CheckArgsTypeTest)
 {
     SymbolTable table;
-    auto func_symbol = getSymbolBuilder().setBasicType(BasicType::CALLABLE)
+    auto func_symbol = Symbol::getSymbolBuilder().setBasicType(BasicType::CALLABLE)
                                 .addArg(BasicType::INTEGER)
                                 .addArg(BasicType::CHAR)
                                 .addArg(BasicType::REAL)
                                 .addName("Func")
                                 .Build();
     
-    auto arg_symbols = getSymbolBuilder().addName("a")
+    auto arg_symbols = Symbol::getSymbolBuilder().addName("a")
                                         .addName("b")
                                         .addName("c")
                                         .setBasicType(BasicType::INTEGER)
@@ -500,7 +500,7 @@ TEST(ArgTest, CheckArgsTypeTest)
     }
 
     {
-        auto void_func_symbol = getSymbolBuilder().addName("VoidFunc")
+        auto void_func_symbol = Symbol::getSymbolBuilder().addName("VoidFunc")
                                     .setBasicType(BasicType::CALLABLE)
                                     .Build();
         EXPECT_EQ(table.InsertSymbol(void_func_symbol).first, true);
@@ -513,7 +513,7 @@ TEST(ArgTest, CheckArgsTypeTest)
 
 TEST(Symbol, SymbolRefAtDefAtTest)
 {
-    Symbol symbol = getSymbolBuilder().addName("test")
+    Symbol symbol = Symbol::getSymbolBuilder().addName("test")
                                       .setDefAt(100)
                                       .Build();
     EXPECT_EQ(symbol.isDefButNotUsed(), true);

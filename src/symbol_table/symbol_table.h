@@ -9,6 +9,7 @@
 #include <set>
 #include <variant>
 #include <cassert>
+#include <type_traits>
 
 #define ENABLE_TEST_FUNCTIONS
 
@@ -25,9 +26,18 @@ namespace PascalSToCPP
         LAST_VAL = CALLABLE
     };
 
-    static inline constexpr int BasicTypeToInt(const BasicType basic_type) noexcept
+    /**
+     * @brief 将给出的枚举值转换为整数
+     * 
+     * @tparam EnumType 
+     * @param enum_val 
+     * @return int 
+     */
+    template <typename EnumType>
+    inline constexpr int EnumToInt(const EnumType enum_val) noexcept 
     {
-        return static_cast<int>(basic_type);
+        static_assert(std::is_enum<EnumType>::value, "EnumType 必须为枚举类型");
+        return static_cast<int>(enum_val);
     }
 
     struct Type
@@ -41,6 +51,8 @@ namespace PascalSToCPP
                    std::equal(args.begin(), args.end(), rhs.args.begin(), rhs.args.end()) &&
                    ret_type == rhs.ret_type;
         }
+
+
         bool operator!=(const Type &rhs) const
         {
             return !((*this) == rhs);
@@ -61,16 +73,20 @@ namespace PascalSToCPP
         std::deque<Type> args{};
         std::optional<BasicType> ret_type{std::nullopt}; // nullopt if procedure
 
-        bool hasNoRetVal() const noexcept
+        // 当类型为可调用对象时, 判断是否有返回值
+        bool hasRetVal() const noexcept
         {
             assert(type == BasicType::CALLABLE); // 检查是否对不可调用对象检查是否有返回值
-            return ret_type == std::nullopt;
+            return ret_type != std::nullopt;
         }
     };
+
+    struct SymbolBuilder;
 
     struct Symbol
     {
     public:
+        static SymbolBuilder getSymbolBuilder();
         static constexpr std::size_t kHasNoDefAt = -1;
 
         Symbol(){};
@@ -78,12 +94,18 @@ namespace PascalSToCPP
             : name(std::move(sym_name)), type(sym_type), def_at(def_line_no)
         {
         }
+
         std::string name{}; // identifier
         Type type{};
         std::size_t def_at{kHasNoDefAt};
 
+        // 判断该符号是否已定义但未使用
         bool isDefButNotUsed() const noexcept { return def_at != kHasNoDefAt && ref_at.empty(); }
+        
+        // 添加引用该符号的行数
         void addRefAt(const std::size_t line_no) { ref_at.insert(line_no); }
+
+        // 获取所有引用该符号的行数
         std::vector<std::size_t> getRefAt() const { return std::vector<std::size_t>(ref_at.begin(), ref_at.end()); }
 
     private:
@@ -129,7 +151,8 @@ namespace PascalSToCPP
         std::size_t def_at_{Symbol::kHasNoDefAt};
         Type type_;
     };
-    static inline SymbolBuilder getSymbolBuilder() { return SymbolBuilder(); }
+    
+    inline SymbolBuilder Symbol::getSymbolBuilder() { return SymbolBuilder(); }
 
     class SymbolTable
     {
