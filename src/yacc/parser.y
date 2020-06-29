@@ -63,7 +63,7 @@ SymbolTable sym_table;
 }
 
 %token <targetCode> PROGRAM VAR ARRAY OF RECORD INTEGER REAL BOOLEAN FUNCTION PROCEDURE  DO
-					BEGIN IF THEN END NOT WHILE READ WRITE ELSE TRUE FALSE INPUT OUTPUT CONSTANT CONST
+					BEGIN IF THEN END NOT WHILE READ WRITE ELSE TRUE FALSE INPUT OUTPUT CONST
 
 %token <targetCode> RELOP ADDOP MULOP ASSIGNOP
 
@@ -74,7 +74,7 @@ SymbolTable sym_table;
 %type <targetCode>  program program_head subprogram_head program_body declarations 
 					subprogram_declarations subprogram_declaration statement compound_statement
 					optional_statements procedure_call_statement statement_list sign 
-					var_declarations var_declaration const_declarations const_declaration
+					var_declarations var_declaration const_declarations const_declaration constant
 
 %type <idList> identifier_list
 
@@ -241,35 +241,44 @@ const_declarations: CONST const_declaration ';'
 					$$ = new string("");
 				};
 
-const_declaration: const_declaration ';' ID '=' NUM
+const_declaration: const_declaration ';' constant
 				{
-					string tmp_target = *($1);
+					$$ = new string(*($1) + *($2));
+				}
+				|	constant
+				{
+					$$ = $1;
+				};
+
+constant: ID '=' NUM
+				{
+					string tmp_target;
 					Type t;
-					if($5.isReal)	//实数常量
+					t.is_constant = true;
+					if($3.isReal)
 					{
 						t.type = BasicType::REAL;
-						t.is_constant = true;
-						Symbol sym(*($3.names), t, yylineno);
+						Symbol sym(*$1, t, yylineno);
 						pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
-								yyerror("const_declaration -> const_declaration ; identifier_list : type : redefined array Identifier in identifier_list!");
+								yyerror("constant -> ID = NUM redefined constant");
 								yyerrok;
 							}
-						tmp_target = 
+						tmp_target = "const double " + *($1) + " = " + *($3.targetCode) + ";\n";
 					}
+					else
+					{
+						t.type = BasicType::INTEGER;
+						Symbol sym(*$1, t, yylineno);
+						pair<bool, int> res = sym_table.InsertSymbol(sym);
+							if(res.first == false) {
+								yyerror("constant -> ID = NUM redefined constant");
+								yyerrok;
+							}
+						tmp_target = "const int " + *($1) + " = " + *($3.targetCode) + ";\n";
+					}
+					$$ = new string(tmp_target);
 				}
-				|	const_declaration ';' ID '=' CONSTANT
-				{
-
-				}
-				|	ID '=' NUM
-				{
-
-				}
-				|	ID '=' CONSTANT
-				{
-
-				};
 
 type: standard_type
 				{
