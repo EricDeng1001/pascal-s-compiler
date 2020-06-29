@@ -395,7 +395,7 @@ subprogram_head: FUNCTION ID arguments ':' standard_type ';'
 						}
 					}
 
-					string temp_code = *($5.targetCode) + " " + *($2) + *($3.targetCode);
+					string temp_code = "void " + *($2) + *($3.targetCode);
 					$$ = new string(temp_code);
 				}
 				| PROCEDURE ID arguments error ';'
@@ -792,19 +792,32 @@ factor: ID
 				}
 				| '(' expression ')'
 				{
-
+					$$.type = new Type(*($2.type));
+					$$.targetCode = new string();
+					*($$.targetCode) = "(" + *($2.targetCode) + ")";
 				}
 				| NOT factor
 				{
-
+					if ($2.type->type != BasicType::BOOLEAN)
+					{
+						// TODO 
+					}
+					$$.type = new Type();
+					$$.targetCode = new string("!");
+					$$.targetCode->append(*($2.targetCode));
+					$$.type->type = BasicType::BOOLEAN;					
 				}
 				| TRUE
 				{
-
+					$$.type = new Type();
+					$$.targetCode = new string("true");
+					$$.type->type = BasicType::BOOLEAN;
 				}
 				| FALSE
 				{
-
+				 	$$.type = new Type();
+					$$.targetCode = new string("false");
+					$$.type->type = BasicType::BOOLEAN;
 				};
 
 sign: '+'
