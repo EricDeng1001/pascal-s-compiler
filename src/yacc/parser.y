@@ -63,7 +63,7 @@ SymbolTable sym_table;
 }
 
 %token <targetCode> PROGRAM VAR ARRAY OF RECORD INTEGER REAL BOOLEAN FUNCTION PROCEDURE  DO
-					BEGIN IF THEN END NOT WHILE READ WRITE ELSE TRUE FALSE INPUT OUTPUT
+					BEGIN IF THEN END NOT WHILE READ WRITE ELSE TRUE FALSE INPUT OUTPUT CONSTANT
 
 %token <targetCode> RELOP ADDOP MULOP ASSIGNOP
 
@@ -71,9 +71,10 @@ SymbolTable sym_table;
 
 %token <targetDigitCode> NUM
 
-%type <targetCode>  program program_head subprogram_head program_body declarations declaration
+%type <targetCode>  program program_head subprogram_head program_body declarations 
 					subprogram_declarations subprogram_declaration statement compound_statement
-					optional_statements procedure_call_statement statement_list sign
+					optional_statements procedure_call_statement statement_list sign 
+					var_declarations var_declaration const_declarations const_declaration
 
 %type <idList> identifier_list
 
@@ -129,7 +130,12 @@ program_body: declarations subprogram_declarations compound_statement
 					$$ = new string(tmp_target);
 				};
 
-declarations: VAR declaration ';'
+declarations: var_declarations const_declarations
+				{
+					$$ = new string(*($1) + *($2));
+				};
+
+var_declarations: VAR var_declaration ';'
 				{
 					$$ = $2;
 				}
@@ -138,14 +144,14 @@ declarations: VAR declaration ';'
 					$$ = new string("");
 				};
 
-declaration: declaration ';' identifier_list ':' type
+var_declaration: var_declaration ';' identifier_list ':' type
 				{
 					//使用dimension来判断是否为数组
 					if(($5.type)->dimension == 0) {
 						string tmp_target = $5->targetCode;
 						for(int i = 0; i < ($3.names)->size(); i++) {
 
-							Symbol sym((*($3.names))[i], $5->type, yylineno);
+							Symbol sym((*($3.names))[i], *($5.type), yylineno);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
@@ -164,12 +170,12 @@ declaration: declaration ';' identifier_list ':' type
 					{
 						string tmp_target = $5->targetCode;
 						for(int i = 0; i < ($3.names)->size(); i++) {
-							Symbol sym((*($3.names))[i], $5->type, yylineno);
+							Symbol sym((*($3.names))[i], *($5.type), yylineno);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
-								parser.yyerror("declaration -> declaration ; identifier_list : type : redefined array Identifier in identifier_list!");
-								parser.yyerrok;
+								yyerror("declaration -> declaration ; identifier_list : type : redefined array Identifier in identifier_list!");
+								yyerrok;
 							}
 							else {	// 生成目标代码
 								string target = to_string($5.array_top - $5.array_bottom  + 1);
@@ -188,7 +194,7 @@ declaration: declaration ';' identifier_list ':' type
 					if(($3.type)->dimension == 0) {
 						string tmp_target = string(($3.targetCode)->data());
 						for(int i = 0; i < ($1.names)->size(); i++) {
-							Symbol sym((*($1.names))[i], $3->type, yylineno);
+							Symbol sym((*($1.names))[i], *($3.type), yylineno);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
@@ -207,7 +213,7 @@ declaration: declaration ';' identifier_list ':' type
 					{
 						string tmp_target = string(($3.targetCode)->data());
 						for(int i = 0; i < ($1.names)->size(); i++) {
-							Symbol sym((*($1.names))[i], $3->type, yylineno);
+							Symbol sym((*($1.names))[i], *($3.type), yylineno);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
@@ -225,6 +231,33 @@ declaration: declaration ';' identifier_list ':' type
 						$$ = new string(tmp_target);
 					}
 				};
+
+const_declarations: CONST const_declaration ';'
+				{
+					$$ = $2;
+				}
+				|
+				{
+					$$ = new string("");
+				};
+
+const_declaration: const_declaration ';' ID '=' NUM
+				{
+					string tmp_target = *($1);
+				}
+				|	const_declaration ';' ID '=' CONSTANT
+				{
+
+				}
+				|	ID '=' NUM
+				{
+
+				}
+				|	ID '=' CONSTANT
+				{
+
+				}
+
 type: standard_type
 				{
 					$$.type = $1.type;
@@ -450,7 +483,7 @@ parameter_list: VAR identifier_list ':' type
 
 					$$.targetCode = new string();
 
-					for (int i = 0; i < $2->size(); i++)
+					for (int i = 0; i < $2.names->size(); i++)
 					{
 						$$.targetCode->append(*($4.targetCode));
 						if (temp_type.isArray()) // 数组的引用区别对待
@@ -481,7 +514,7 @@ parameter_list: VAR identifier_list ':' type
 
 					$$.targetCode = new string();
 
-					for (int i = 0; i < $1->size(); i++)
+					for (int i = 0; i < $1.names->size(); i++)
 					{
 						$$.targetCode->append(*($3.targetCode) + " ")
 									 ->append($1.names[i]);
@@ -518,7 +551,7 @@ statement_list: statement_list ';' statement
 				}
 				| statement
 				{
-					$$ = new string(*($1) + "\n");
+					$$ = new string(*($1) + ";\n");
 				};
 
 statement: variable ASSIGNOP expression
@@ -1009,11 +1042,11 @@ factor: ID
 
 sign: '+'
 				{
-          $$ = new string("+");
+					$$ = new string("+");
 				}
 				| '-'
 				{
-          $$ = new string("-");
+					$$ = new string("-");
 				};
 
 %%
