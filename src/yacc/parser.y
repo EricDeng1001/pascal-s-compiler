@@ -12,7 +12,6 @@
 
 #include "../symbol_table/symbol_table.h"
 
-
 using namespace std;
 using namespace PascalSToCPP;
 
@@ -65,7 +64,7 @@ SymbolTable sym_table;
 }
 
 %token <targetCode> PROGRAM VAR ARRAY OF RECORD INTEGER REAL BOOLEAN FUNCTION PROCEDURE  DO
-					BEGIN IF THEN END NOT WHILE READ WRITE ELSE TRUE FALSE
+					BEGIN IF THEN END NOT WHILE READ WRITE ELSE TRUE FALSE INPUT OUTPUT
 
 %token <targetCode> RELOP ADDOP MULOP ASSIGNOP
 
@@ -164,7 +163,7 @@ declaration: declaration ';' identifier_list ':' type
 							}
 						}
 						$$ = new string(string(($1)->data()) + tmp_target);
-					}else
+					}else if(($5.type)->dimension > 0)
 					{
 						string tmp_target = string(($5.targetCode)->data());
 						for(int i = 0; i < ($3.names)->size(); i++) {
@@ -178,7 +177,15 @@ declaration: declaration ';' identifier_list ':' type
 								parser.yyerrok();
 							}
 							else {	// 生成目标代码
-
+								int array_range = $5.array_top - $5.array_bottom  + 1;
+								stringstream ss; 
+								string target;
+								ss << array_range;
+								ss >> target;
+								if(i != ($3.idNameList)->size() - 1)
+									tmp_target += " " + (*($3.names))[i] + "[" + target + "],";
+								else
+									tmp_target += " " + (*($3.names))[i] + "[" + target + "];\n";
 							}
 						}
 						$$ = new string(string(($1)->data()) + tmp_target);
@@ -186,7 +193,55 @@ declaration: declaration ';' identifier_list ':' type
 				}
 				| identifier_list ':' type
 				{
+					//使用dimension来判断是否为数组
+					if(($3.type)->dimension == 0) {
+						string tmp_target = string(($3.targetCode)->data());
+						for(int i = 0; i < ($1.names)->size(); i++) {
 
+							struct Symbol sym;
+							sym.type = $3->type;
+							sym.name = (*($1.names))[i];
+							// 插入到符号表
+							pair<bool, int> res = sym_table.InsertSymbol(sym);
+							if(res.first == false) {
+								yyerror("declaration -> declaration ; identifier_list : type : redefined varible Identifier in identifier_list!");
+								yyerrok();
+							}
+							else {	// 生成目标代码
+								if(i != ($1.names)->size() - 1)
+									tmp_target += " " + (*($1.names))[i] + ",";
+								else
+									tmp_target += " " + (*($1.names))[i] + ";\n";
+							}
+						}
+						$$ = new string(tmp_target);
+					}else if(($3.type)->dimension > 0)
+					{
+						string tmp_target = string(($3.targetCode)->data());
+						for(int i = 0; i < ($1.names)->size(); i++) {
+							struct Symbol sym;
+							sym.type = $3->type;
+							sym.name = (*($1.names))[i];
+							// 插入到符号表
+							pair<bool, int> res = sym_table.InsertSymbol(sym);
+							if(res.first == false) {
+								parser.yyerror("declaration -> declaration ; identifier_list : type : redefined array Identifier in identifier_list!");
+								parser.yyerrok();
+							}
+							else {	// 生成目标代码
+								int array_range = $3.array_top - $3.array_bottom  + 1;
+								stringstream ss; 
+								string target;
+								ss << array_range;
+								ss >> target;
+								if(i != ($1.idNameList)->size() - 1)
+									tmp_target += " " + (*($1.names))[i] + "[" + target + "],";
+								else
+									tmp_target += " " + (*($1.names))[i] + "[" + target + "];\n";
+							}
+						}
+						$$ = new string(tmp_target);	
+					}
 				};
 
 type: standard_type
