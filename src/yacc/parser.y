@@ -900,7 +900,34 @@ factor: ID
 				}
 				| ID '(' expr_list ')'
 				{
-
+          Symbol* symbol = sym_table.getSymbol(*($1));
+          if (symbol == nullptr) {
+            yyerror("id not defined");
+            yyerrok;
+          } else {
+            if (!symbol->type.isCallable()) {
+              yyerror("id必须是一个可以调用");
+              yyerrok;
+            } else {
+              if (symbol->ret_type == BasicType.VOID) {
+                yyerror("被调用的函数必须有返回值");
+                yyerrok;
+              } else {
+                if ($3.names->size() != symbol->dimension) {
+                  yyerror("被调用函数的参数个数不匹配");
+                  yyerrok;
+                } else {
+                  for (int i = 0; i < $3.types->size(); i++) {
+                    if ((*($3.types))[i] != symbol->args[i]) {
+                      yyerror(string("第") + string(i) + "个参数类型不匹配");
+                      yyerrok;
+                    }
+                  }
+                  $$ = new string(*($1) + "(" + *($3.targetCode) + ")");
+                }
+              }
+            }
+          }
 				}
 				| ID '[' expression ']'
 				{
@@ -920,12 +947,12 @@ factor: ID
 				{
 					if ($2.type->type != BasicType::BOOLEAN)
 					{
-						// TODO 
+						// TODO
 					}
 					$$.type = new Type();
 					$$.targetCode = new string("!");
 					$$.targetCode->append(*($2.targetCode));
-					$$.type->type = BasicType::BOOLEAN;					
+					$$.type->type = BasicType::BOOLEAN;
 				}
 				| TRUE
 				{
