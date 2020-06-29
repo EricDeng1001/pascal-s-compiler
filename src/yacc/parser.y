@@ -161,25 +161,29 @@ standard_type : INTEGER
 
 subprogram_declarations : subprogram_declarations subprogram_declaration ';'
 				{
-
+					string temp = string($1->data()) + "\n" + string($2->data());
+					$$ = new string(temp);
 				}
 				|
 				{
-
+					$$ = new string("");
 				};
 
 subprogram_declaration : subprogram_head declarations compound_statement
 				{
-
+					string temp = string($1->data()) + "\n" + string($2->data()) + "\n" + string($3->data()) + "\n}\n";
+					$$ = new string(temp);
+					//TODO重定向
 				};
 
 subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 				{
 
+
 				}
 				| FUNCTION ID arguments error
 				{
-
+				}
 				| PROCEDURE ID arguments ';'
 				{
 
@@ -192,13 +196,19 @@ subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 
 arguments : '(' parameter_lists ')'
 				{
-
+					$$.paraType = new vector <DATA_TYPE>;
+					for(int i = 0; i < ($2.paraType)->size(); i++)
+					{
+						($$.paraType)->push_back((*($2.paraType))[i]);
+					}
+					string temp = "(" + string(($2.targetCode)->data()) + ")";
+					$$.targetCode = new string(temp);
 				}
 				|
 				{
-
+					string temp = "()";
+					$$.targetCode = new string(temp);
 				};
-
 parameter_lists : parameter_lists ';' parameter_list
 				{
 
