@@ -76,9 +76,24 @@ namespace PascalSToCPP
         std::deque<Type> args{};
         std::optional<BasicType> ret_type{std::nullopt}; // nullopt if procedure
 
+        // 判断类型是否为数组
         bool isArray() const noexcept
         {
             return type != BasicType::CALLABLE && dimension > 0;
+        }
+
+        // 如果类型为数组, 则返回其各个维度周期的字符串表示(e.g. [a][b][c])
+        std::string getArrayPeriodsString() const
+        {
+            assert(isArray());
+	        std::string res;
+	        for (const auto [lb, ub]: periods)
+            {
+                res.push_back('[')
+                   .append(std::to_string(ub - lb));
+                   .push_back(']');
+            }
+	        return res;
         }
 
         // 当类型为可调用对象时, 判断是否有返回值
