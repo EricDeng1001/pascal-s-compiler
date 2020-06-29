@@ -12,10 +12,13 @@
 
 #include "../symbol_table/symbol_table.h"
 
+#define struct Type* Typeptr;
+
 using namespace std;
 using namespace PascalSToCPP;
 
 SymbolTable sym_table;
+
 %}
 
 %union
@@ -25,8 +28,8 @@ SymbolTable sym_table;
 	struct
 	{
 		double num;
-		Type type;
-	    string *targetCode;
+		Typeptr type;
+	    string* targetCode;
 	} targetDigitCode;
 
 	struct
@@ -36,14 +39,14 @@ SymbolTable sym_table;
 
 	struct
 	{
-		vector<string> *names;
-	    vector<Type> *types;
-	    string *targetCode;
+		vector <string>* names;
+	    vector <struct Type>* types;
+	    string* targetCode;
 	} exprList;
 
 	struct
 	{
-		Type type;
+		Typeptr type;
 		int arrayTop;
 		int arrayBottom;
 		string *targetCode;
@@ -57,8 +60,8 @@ SymbolTable sym_table;
 
 	struct
 	{
-		Type type;
-		string *targetCode;
+		Typeptr type;
+		string* targetCode;
 	}expStruct;
 }
 
@@ -86,54 +89,108 @@ SymbolTable sym_table;
 %type <parameterStruct> parameter_list parameter_lists arguments
 %%
 
-program : program_head program_body '.'
+program: program_head program_body '.'
 				{
-
+					string tmp_target = string($1->data()) + string($2->data());
+					$$ = new string(tmp_target);
+					cout << string($$->data());
 				}
         | program_head program_body error
 				{
-
+					string tmp_target = string($1->data()) + string($2->data());
+					$$ = new string(tmp_target);
+					cout << string($$->data());
+					yyerror("program -> program_head program_body . : missing '.'at the end of the program.");
+					yyerrok();
 				};
 
-program_head : PROGRAM ID '(' identifier_list ')' ';'
+program_head: PROGRAM ID '(' INPUT ',' OUTPUT ')' ';'
 				{
-
-
+					$$ = new string("#include <iostream>\n#include <cmath>\nusing namespace std;\n"); //填写C++程序首部
 				};
 
-identifier_list : identifier_list ',' ID
+identifier_list: identifier_list ',' ID
 				{
-
+					// 记录已经录入的参数
+					$$.names = new vector <string>;
+					for(int i = 0; i < ($1.names)->size(); i++) {
+						($$.names)->push_back((*($1.names))[i]);
+					}
+					// 记录新的id
+					($$.names)->push_back(string($3->data()));
 				}
 				| ID
 				{
-
+					$$.names = new vector <string>;
+					($$.names)->push_back(string($1->data()));
+				};
+				
+program_body: declarations subprogram_declarations compound_statement
+				{
+					string tmp_target = string($1->data()) + string($2->data()) + "\n" + "int main()\n{\n" + string($3->data()) + "\nreturn 0;\n}\n";
+					$$ = new string(tmp_target);
 				};
 
-program_body : declarations subprogram_declarations compound_statement
+declarations: VAR declaration ';'
 				{
-
-				};
-
-declarations : VAR declaration ';'
-				{
-
+					string tmp_target = string($2->data());
+					$$ = new string(tmp_target);
 				}
 				|
 				{
-
+					$$ = new string("");
 				};
 
-declaration : declaration ';' identifier_list ':' type
+declaration: declaration ';' identifier_list ':' type
 				{
+					//使用dimension来判断是否为数组
+					if(($5.type)->dimension == 0) {
+						string tmp_target = string(($5.targetCode)->data());
+						for(int i = 0; i < ($3.names)->size(); i++) {
 
+							struct Symbol sym;
+							sym.type = $5->type;
+							sym.name = (*($3.names))[i];
+							// 插入到符号表
+							pair<bool, int> res = sym_table.InsertSymbol(sym);
+							if(res.first == false) {
+								yyerror("declaration -> declaration ; identifier_list : type : redefined varible Identifier in identifier_list!");
+								yyerrok();
+							}
+							else {	// 生成目标代码
+								if(i != ($3.names)->size() - 1)
+									tmp_target += " " + (*($3.names))[i] + ",";
+								else
+									tmp_target += " " + (*($3.names))[i] + ";\n";
+							}
+						}
+						$$ = new string(string(($1)->data()) + tmp_target);
+					}else 
+					{
+						string tmp_target = string(($5.targetCode)->data());
+						for(int i = 0; i < ($3.names)->size(); i++) {
+							struct Symbol sym;
+							sym.type = $5->type;
+							sym.name = (*($3.names))[i];
+							// 插入到符号表
+							pair<bool, int> res = sym_table.InsertSymbol(sym);
+							if(res.first == false) {
+								parser.yyerror("declaration -> declaration ; identifier_list : type : redefined array Identifier in identifier_list!");
+								parser.yyerrok();
+							}
+							else {	// 生成目标代码
+								
+							}
+						}
+						$$ = new string(string(($1)->data()) + tmp_target);	
+					}
 				}
 				| identifier_list ':' type
 				{
 
 				};
 
-type : standard_type
+type: standard_type
 				{
 
 				}
@@ -146,7 +203,7 @@ type : standard_type
 
 				};
 
-standard_type : INTEGER
+standard_type: INTEGER
 				{
 
 				}
