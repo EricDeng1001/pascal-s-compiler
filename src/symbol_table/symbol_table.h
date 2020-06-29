@@ -15,9 +15,6 @@
 
 namespace PascalSToCPP
 {
-
-
-
     enum class BasicType
     {
         INTEGER = 0,
@@ -89,9 +86,9 @@ namespace PascalSToCPP
 	        std::string res;
 	        for (const auto [lb, ub]: periods)
             {
-                res.push_back('[')
-                   .append(std::to_string(ub - lb));
-                   .push_back(']');
+                res.append("[")
+                   .append(std::to_string(ub - lb))
+                   .append("]");
             }
 	        return res;
         }
@@ -190,6 +187,16 @@ namespace PascalSToCPP
         // 获取当前作用域中给定符号下标的符号，返回其引用(使用前确保下标合法)
         Symbol &getSymbol(const int symbol_ind);
         const Symbol &getSymbol(const int symbol_ind) const;
+
+        // 如果当前作用域不为全局作用域, 返回其父作用域对应的符号
+        Symbol getParentSymbol() const
+        {
+            assert(!isInGlobalScope());
+            return getSymbolGlobal(scope_ind_);
+        }
+
+        // 返回当前作用域是否为全局作用域
+        bool isInGlobalScope() const noexcept { return scope_ind_ == kGlobalScopeId; }
 
         // 获取给定名字在当前作用域的下标
         std::optional<int> getSymbolIndex(const std::string &name) const;
