@@ -64,7 +64,7 @@ SymbolTable sym_table;
 }
 
 %token <targetCode> PROGRAM VAR ARRAY OF RECORD INTEGER REAL BOOLEAN FUNCTION PROCEDURE  DO
-					BEGIN IF THEN END NOT WHILE READ WRITE ELSE TRUE FALSE INPUT OUTPUT
+					BEGIN IF THEN END NOT WHILE READ WRITE ELSE TRUE FALSE INPUT OUTPUT CONSTANT
 
 %token <targetCode> RELOP ADDOP MULOP ASSIGNOP
 
@@ -72,9 +72,10 @@ SymbolTable sym_table;
 
 %token <targetDigitCode> NUM
 
-%type <targetCode>  program program_head subprogram_head program_body declarations declaration
+%type <targetCode>  program program_head subprogram_head program_body declarations 
 					subprogram_declarations subprogram_declaration statement compound_statement
-					optional_statements procedure_call_statement statement_list sign
+					optional_statements procedure_call_statement statement_list sign 
+					var_declarations var_declaration const_declarations const_declaration
 
 %type <idList> identifier_list
 
@@ -130,7 +131,12 @@ program_body: declarations subprogram_declarations compound_statement
 					$$ = new string(tmp_target);
 				};
 
-declarations: VAR declaration ';'
+declarations: var_declarations const_declarations
+				{
+					$$ = new string(*($1) + *($2));
+				};
+
+var_declarations: VAR var_declaration ';'
 				{
 					$$ = $2;
 				}
@@ -139,7 +145,7 @@ declarations: VAR declaration ';'
 					$$ = new string("");
 				};
 
-declaration: declaration ';' identifier_list ':' type
+var_declaration: var_declaration ';' identifier_list ':' type
 				{
 					//使用dimension来判断是否为数组
 					if(($5.type)->dimension == 0) {
@@ -226,6 +232,33 @@ declaration: declaration ';' identifier_list ':' type
 						$$ = new string(tmp_target);
 					}
 				};
+
+const_declarations: CONST const_declaration ';'
+				{
+					$$ = $2;
+				}
+				|
+				{
+					$$ = new string("");
+				};
+
+const_declaration: const_declaration ';' ID '=' NUM
+				{
+					string tmp_target = *($1);
+				}
+				|	const_declaration ';' ID '=' CONSTANT
+				{
+
+				}
+				|	ID '=' NUM
+				{
+
+				}
+				|	ID '=' CONSTANT
+				{
+
+				}
+
 type: standard_type
 				{
 					$$.type = $1.type;
