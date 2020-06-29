@@ -63,7 +63,7 @@ SymbolTable sym_table;
 }
 
 %token <targetCode> PROGRAM VAR ARRAY OF RECORD INTEGER REAL BOOLEAN FUNCTION PROCEDURE  DO
-					BEGIN IF THEN END NOT WHILE READ WRITE ELSE TRUE FALSE INPUT OUTPUT CONSTANT
+					BEGIN IF THEN END NOT WHILE READ WRITE ELSE TRUE FALSE INPUT OUTPUT CONSTANT CONST
 
 %token <targetCode> RELOP ADDOP MULOP ASSIGNOP
 
@@ -217,8 +217,8 @@ var_declaration: var_declaration ';' identifier_list ':' type
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
-								parser.yyerror("declaration -> declaration ; identifier_list : type : redefined array Identifier in identifier_list!");
-								parser.yyerrok;
+								yyerror("declaration -> declaration ; identifier_list : type : redefined array Identifier in identifier_list!");
+								yyerrok;
 							}
 							else {	// 生成目标代码
 								string target = to_string($3.array_top - $3.array_bottom  + 1);
@@ -244,6 +244,19 @@ const_declarations: CONST const_declaration ';'
 const_declaration: const_declaration ';' ID '=' NUM
 				{
 					string tmp_target = *($1);
+					Type t;
+					if($5.isReal)	//实数常量
+					{
+						t.type = BasicType::REAL;
+						t.is_constant = true;
+						Symbol sym(*($3.names), t, yylineno);
+						pair<bool, int> res = sym_table.InsertSymbol(sym);
+							if(res.first == false) {
+								yyerror("const_declaration -> const_declaration ; identifier_list : type : redefined array Identifier in identifier_list!");
+								yyerrok;
+							}
+						tmp_target = 
+					}
 				}
 				|	const_declaration ';' ID '=' CONSTANT
 				{
@@ -256,7 +269,7 @@ const_declaration: const_declaration ';' ID '=' NUM
 				|	ID '=' CONSTANT
 				{
 
-				}
+				};
 
 type: standard_type
 				{
