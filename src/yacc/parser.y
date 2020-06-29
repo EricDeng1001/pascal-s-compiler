@@ -226,13 +226,6 @@ declaration: declaration ';' identifier_list ':' type
 						$$ = new string(tmp_target);
 					}
 				};
-struct
-	{
-		Type *type;
-		int arrayTop;
-		int arrayBottom;
-		string *targetCode;
-	} typeStruct;
 type: standard_type
 				{
 					$$.type = $1.type;
@@ -241,15 +234,15 @@ type: standard_type
 				| ARRAY '[' NUM '.' '.' NUM ']' OF standard_type
 				{
 					if($3.type != BasicType::INTEGER || $6.type != BasicType::INTEGER) {
-						parser.yyerror("type -> ARRAY [ NUM . . NUM ] OF standard_type : 数组参数NUM类型错误!");		/////////////////////////////////////////////////////// 现在
-						parser.yyerrok();
+						yyerror("type -> ARRAY [ NUM . . NUM ] OF standard_type : 数组参数NUM类型错误!");		/////////////////////////////////////////////////////// 现在
+						yyerrok;
 					} 
 					$$.type = $9.type;
 					$$.array_top = (int)($6.num);
 					$$.array_bottom = (int)($3.num);
 					if($$.array_top - $$.array_bottom < 0) {
 						parser.yyerror("type -> ARRAY [ NUM . . NUM ] OF standard_type : 数组下界不可小于上界!");
-						parser.yyerrok();
+						parser.yyerrok;
 					}
 					$$.targetCode = $9.targetCode;
 				};
