@@ -89,17 +89,17 @@ SymbolTable sym_table;
 
 program: program_head program_body '.'
 				{
-					string tmp_target = string($1->data()) + string($2->data());
+					string tmp_target = *($1) + *($2);
 					$$ = new string(tmp_target);
-					cout << string($$->data());
+					cout << *($$);
 				}
         | program_head program_body error
 				{
-					string tmp_target = string($1->data()) + string($2->data());
+					string tmp_target = *($1) + *($2);
 					$$ = new string(tmp_target);
-					cout << string($$->data());
+					cout << *($$);
 					yyerror("program -> program_head program_body . : missing '.'at the end of the program.");
-					yyerrok();
+					yyerrok;
 				};
 
 program_head: PROGRAM ID '(' INPUT ',' OUTPUT ')' ';'
@@ -110,22 +110,23 @@ program_head: PROGRAM ID '(' INPUT ',' OUTPUT ')' ';'
 identifier_list: identifier_list ',' ID
 				{
 					// 记录已经录入的参数
-					$$.names = new vector <string>;
-					for(int i = 0; i < ($1.names)->size(); i++) {
-						($$.names)->push_back((*($1.names))[i]);
-					}
+					$$.names = new vector<string>(*($1.names));
 					// 记录新的id
-					($$.names)->push_back(string($3->data()));
+					($$.names)->push_back(*($3));
 				}
 				| ID
 				{
-					$$.names = new vector <string>;
-					($$.names)->push_back(string($1->data()));
+					$$.names = new vector<string>();
+					($$.names)->push_back(*($1));
 				};
 
 program_body: declarations subprogram_declarations compound_statement
 				{
-					string tmp_target = string($1->data()) + string($2->data()) + "\n" + "int main()\n{\n" + string($3->data()) + "\nreturn 0;\n}\n";
+					string tmp_target = *($1) + "\n" + 
+										*($2) + "\n" +
+										"int main()\n{\n" + 
+										*($3) + "\n" +
+										"return 0;\n}\n";
 					$$ = new string(tmp_target);
 				};
 
@@ -146,7 +147,7 @@ declaration: declaration ';' identifier_list ':' type
 						string tmp_target = string(($5.targetCode)->data());
 						for(int i = 0; i < ($3.names)->size(); i++) {
 
-							struct Symbol sym;
+							Symbol sym;
 							sym.type = $5->type;
 							sym.name = (*($3.names))[i];
 							// 插入到符号表
@@ -167,7 +168,7 @@ declaration: declaration ';' identifier_list ':' type
 					{
 						string tmp_target = string(($5.targetCode)->data());
 						for(int i = 0; i < ($3.names)->size(); i++) {
-							struct Symbol sym;
+							Symbol sym;
 							sym.type = $5->type;
 							sym.name = (*($3.names))[i];
 							// 插入到符号表
