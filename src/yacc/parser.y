@@ -169,8 +169,8 @@ declaration: declaration ';' identifier_list ':' type
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
-								parser.yyerror("declaration -> declaration ; identifier_list : type : redefined array Identifier in identifier_list!");
-								parser.yyerrok;
+								yyerror("declaration -> declaration ; identifier_list : type : redefined array Identifier in identifier_list!");
+								yyerrok;
 							}
 							else {	// 生成目标代码
 								string target = to_string($5.array_top - $5.array_bottom  + 1);
@@ -445,7 +445,7 @@ parameter_list: VAR identifier_list ':' type
 
 					$$.targetCode = new string();
 
-					for (int i = 0; i < $2->size(); i++)
+					for (int i = 0; i < $2.names->size(); i++)
 					{
 						$$.targetCode->append(*($4.targetCode));
 						if (temp_type.isArray()) // 数组的引用区别对待
@@ -468,18 +468,18 @@ parameter_list: VAR identifier_list ':' type
 				|  identifier_list ':' type
 				{
 				    // 填写参数表
-					Type &temp_type = *($4.type);
+					Type &temp_type = *($3.type);
 					temp_type.is_ref = false;
 
 					$$.paraTypeAndNames = new vector<pair<Type, vector<string>>>();
-				    $$.paraTypeAndNames->push_back({temp_type, *($2.names)});
+				    $$.paraTypeAndNames->push_back({temp_type, *($1.names)});
 
 					$$.targetCode = new string();
 
-					for (int i = 0; i < $2->size(); i++)
+					for (int i = 0; i < $1.names->size(); i++)
 					{
-						$$.targetCode->append(*($4.targetCode) + " ")
-									 ->append($2.names[i]);
+						$$.targetCode->append(*($3.targetCode) + " ")
+									 ->append($1.names[i]);
 						if (temp_type.isArray())
 							$$.targetCode->append(temp_type.getArrayPeriodsString());
 						$$.targetCode->push_back(',');
@@ -509,11 +509,11 @@ optional_statements: statement_list
 statement_list: statement_list ';' statement
 				{
 					$$ = new string(*($1));
-					$$->append(*($2) + "\n");
+					$$->append(*($3) + ";\n");
 				}
 				| statement
 				{
-					$$ = new string(*($1) + "\n");
+					$$ = new string(*($1) + ";\n");
 				};
 
 statement: variable ASSIGNOP expression
