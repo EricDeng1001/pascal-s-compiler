@@ -73,6 +73,26 @@ namespace PascalSToCPP
         std::deque<Type> args{};
         std::optional<BasicType> ret_type{std::nullopt}; // nullopt if procedure
 
+        // 判断类型是否为数组
+        bool isArray() const noexcept
+        {
+            return type != BasicType::CALLABLE && dimension > 0;
+        }
+
+        // 如果类型为数组, 则返回其各个维度周期的字符串表示(e.g. [a][b][c])
+        std::string getArrayPeriodsString() const
+        {
+            assert(isArray());
+	        std::string res;
+	        for (const auto [lb, ub]: periods)
+            {
+                res.append("[")
+                   .append(std::to_string(ub - lb))
+                   .append("]");
+            }
+	        return res;
+        }
+
         // 当类型为可调用对象时, 判断是否有返回值
         bool hasRetVal() const noexcept
         {
@@ -167,6 +187,16 @@ namespace PascalSToCPP
         // 获取当前作用域中给定符号下标的符号，返回其引用(使用前确保下标合法)
         Symbol &getSymbol(const int symbol_ind);
         const Symbol &getSymbol(const int symbol_ind) const;
+
+        // 如果当前作用域不为全局作用域, 返回其父作用域对应的符号
+        Symbol getParentSymbol() const
+        {
+            assert(!isInGlobalScope());
+            return getSymbolGlobal(scope_ind_);
+        }
+
+        // 返回当前作用域是否为全局作用域
+        bool isInGlobalScope() const noexcept { return scope_ind_ == kGlobalScopeId; }
 
         // 获取给定名字在当前作用域的下标
         std::optional<int> getSymbolIndex(const std::string &name) const;
