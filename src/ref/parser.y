@@ -3,7 +3,7 @@
 parser.y
 ParserWizard generated YACC file.
 
-Date: 2014Äê12ÔÂ6ÈÕ
+Date: 2014å¹´12æœˆ6æ—¥
 ****************************************************************************/
 #include <string>
 #include <vector>
@@ -22,24 +22,24 @@ Date: 2014Äê12ÔÂ6ÈÕ
 
 using namespace std;
 
-Lexer lexer;    //´Ê·¨·ÖÎöÆ÷
+Lexer lexer;    //è¯æ³•åˆ†æå™¨
 
-Parser parser;  //Óï·¨·ÖÎöÆ÷
+Parser parser;  //è¯­æ³•åˆ†æå™¨
 
-SymbolTable sym_table;	// ·ûºÅ±í
+SymbolTable sym_table;	// ç¬¦å·è¡¨
 
-vector <string> argv;	// Ö÷º¯ÊıÊäÈë²ÎÊı
+vector <string> argv;	// ä¸»å‡½æ•°è¾“å…¥å‚æ•°
 
-ifstream in_stream;//¶ÁÈëÎÄ¼ş
+ifstream in_stream;//è¯»å…¥æ–‡ä»¶
 
-ofstream out_stream;//Êä³öÎÄ¼ş
+ofstream out_stream;//è¾“å‡ºæ–‡ä»¶
 
-fstream debug_stream; // µ÷ÊÔĞÅÏ¢Êä³öÁ÷
+fstream debug_stream; // è°ƒè¯•ä¿¡æ¯è¾“å‡ºæµ
 
-fstream error_stream; // Ä¿±ê´úÂëÊä³öÁ÷
+fstream error_stream; // ç›®æ ‡ä»£ç è¾“å‡ºæµ
 
 
-//±í´ïÊ½ÁĞ±í
+//è¡¨è¾¾å¼åˆ—è¡¨
 typedef struct 
 {
 	vector <string> idNameList;	
@@ -47,7 +47,7 @@ typedef struct
 	vector <TABLE_TYPE> tableTypeList;
 }parameteList;
 
-//±í´ïÊ½ÁĞ±í
+//è¡¨è¾¾å¼åˆ—è¡¨
 typedef struct 
 {
 	vector <int> lowList;	
@@ -66,10 +66,10 @@ bool needReturn = false;
 // declarations section
 %union
 {
-	//Ä¿±ê´úÂë
+	//ç›®æ ‡ä»£ç 
 	string* targetCode;
 	
-	//Êı×Ö×ª»¯ºóµÄÄ¿±ê´úÂë
+	//æ•°å­—è½¬åŒ–åçš„ç›®æ ‡ä»£ç 
 	struct 
 	{
 		double num;	
@@ -77,14 +77,14 @@ bool needReturn = false;
 	    string* targetCode;	
 	}targetDigitCode;
 	
-	//±êÊ¶·û
+	//æ ‡è¯†ç¬¦
 	struct 
 	{
 		vector <string>* idNameList;	
 	   // vector <string>* idValueList;
 	}idList;
 	
-	//±í´ïÊ½ÁĞ±í
+	//è¡¨è¾¾å¼åˆ—è¡¨
 	struct 
 	{
 		vector <string>* idNameList;	
@@ -93,7 +93,7 @@ bool needReturn = false;
 	    string* targetCode;
 	}exprList;
 
-	// ±äÁ¿ÀàĞÍ
+	// å˜é‡ç±»å‹
 	struct 
 	{
 		DATA_TYPE id_type; 
@@ -109,7 +109,7 @@ bool needReturn = false;
 		string* targetCode;
 	}parameterStruct;
 	
-	// ±äÁ¿ÀàĞÍ
+	// å˜é‡ç±»å‹
 	struct 
 	{
 		DATA_TYPE value_type;
@@ -125,7 +125,7 @@ bool needReturn = false;
 // class definition
 {
 	// place any extra class members here
-	virtual void yyerror(const char*s);  //yyerror£¨£©ÓÃÓÚ±¨´í£¬ÌáÊ¾´úÂëÖĞµÄ´íÎó¡£
+	virtual void yyerror(const char*s);  //yyerrorï¼ˆï¼‰ç”¨äºæŠ¥é”™ï¼Œæç¤ºä»£ç ä¸­çš„é”™è¯¯ã€‚
 }
 
 // constructor
@@ -146,36 +146,36 @@ bool needReturn = false;
 }
 // place any declarations here
 
-//¹Ø¼ü×Ö
+//å…³é”®å­—
 %token <targetCode> PROGRAM  VAR  ARRAY  OF  RECORD  INTEGER
 								 REAL  BOOLEAN  FUNCTION  PROCEDURE  DO  
 								 BEGIN  IF  THEN  END  NOT  WHILE  READ
 								 WRITE  ELSE  TRUE  FALSE 
 
-//¹ØÏµÔËËã·û£¬ÔËËã·û(+,-,or)£¬ÔËËã·û(*,/,div,mod,and),¸³ÖµÔËËã·û
+//å…³ç³»è¿ç®—ç¬¦ï¼Œè¿ç®—ç¬¦(+,-,or)ï¼Œè¿ç®—ç¬¦(*,/,div,mod,and),èµ‹å€¼è¿ç®—ç¬¦
 %token <targetCode> RELOP  ADDOP  MULOP  ASSIGNOP
-//±êÊ¶·û        
+//æ ‡è¯†ç¬¦        
 %token <targetCode>	ID
-//Êı×Ö
+//æ•°å­—
 %token <targetDigitCode> NUM
 
-//·ÇÖÕ½á·û
+//éç»ˆç»“ç¬¦
 %type <targetCode>  program  program_head  subprogram_head   program_body declarations  declaration  
 					subprogram_declarations  subprogram_declaration statement    compound_statement
 					optional_statements  procedure_call_statement statement_list  sign
 						    	 
-// ±äÁ¿ÁĞ±í
+// å˜é‡åˆ—è¡¨
 %type <idList> identifier_list
 
-//±í´ïÊ½ÁĞ±í
+//è¡¨è¾¾å¼åˆ—è¡¨
 %type <exprList> expr_list
 
-// ±äÁ¿ÀàĞÍ
+// å˜é‡ç±»å‹
 %type <typeStruct> type  standard_type 
 
 %type <expStruct> variable expression  simple_expr  term factor
  
-// º¯Êı²ÎÊıÁĞ±í
+// å‡½æ•°å‚æ•°åˆ—è¡¨
 %type <parameterStruct> parameter_list  parameter_lists  arguments 
 
 %%
@@ -208,23 +208,23 @@ program_head : PROGRAM ID '(' identifier_list ')' ';'
 				{
 					debug_stream<<"	YACC--program_head->PROGRAM ID ( identifier_list ) ;" << endl;
 
-					$$ = new string("#include <iostream>\nusing namespace std;\n");	// ÌîĞ´C++³ÌĞòÊ×²¿
+					$$ = new string("#include <iostream>\nusing namespace std;\n");	// å¡«å†™C++ç¨‹åºé¦–éƒ¨
 					debug_stream << "	data() = " << $$->data();
 
-					// ĞÂ¿é¶¨Ïò²Ù×÷
+					// æ–°å—å®šå‘æ“ä½œ
 					sym_table.locate();
 					
-					// Ğ´Èë³ÌĞòID
+					// å†™å…¥ç¨‹åºID
 					functionInfo proID_In;
 					proID_In.declareRow = lexer.yylineno;
-					if(sym_table.insert(string($2->data()), proID_In) == NULL) {		// sym_table.insert(...)µÄ²ÎÊıÀàĞÍÊÇstringÂğ
+					if(sym_table.insert(string($2->data()), proID_In) == NULL) {		// sym_table.insert(...)çš„å‚æ•°ç±»å‹æ˜¯stringå—
 						parser.yyerror("program_head -> PROGRAM ID ( identifier_list ) ; : redefined program ID !");
 						parser.yyerrok();
 					}
 					
-					// ¼ÇÂ¼³ÌĞòÊäÈë²ÎÊı
+					// è®°å½•ç¨‹åºè¾“å…¥å‚æ•°
 					for(int i = 0; i < ($4.idNameList)->size(); i++) {
-						// ½«identifier_listĞ´Èë·ûºÅ±í
+						// å°†identifier_listå†™å…¥ç¬¦å·è¡¨
 						varInfo argvIn;
 						argvIn.declareRow = lexer.yylineno;
 						
@@ -239,12 +239,12 @@ program_head : PROGRAM ID '(' identifier_list ')' ';'
 identifier_list : identifier_list ',' ID
 				{
 					debug_stream << "	YACC--identifier_list->identifier_list , ID" << endl;
-					// ¼ÇÂ¼ÒÑ¾­Â¼ÈëµÄ²ÎÊı
+					// è®°å½•å·²ç»å½•å…¥çš„å‚æ•°
 					$$.idNameList = new vector <string>;
 					for(int i = 0; i < ($1.idNameList)->size(); i++) {
 						($$.idNameList)->push_back((*($1.idNameList))[i]);
 					}
-					// ¼ÇÂ¼ĞÂµÄid
+					// è®°å½•æ–°çš„id
 					($$.idNameList)->push_back(string($3->data()));
 				}
 				| ID
@@ -286,12 +286,12 @@ declaration : declaration ';' identifier_list ':' type
 							varInfo declare_In;
 							declare_In.type = $5.id_type;
 							declare_In.declareRow = lexer.yylineno;
-							// ²åÈëµ½·ûºÅ±í
+							// æ’å…¥åˆ°ç¬¦å·è¡¨
 							if(sym_table.insert((*($3.idNameList))[i], declare_In) == NULL) {
 								parser.yyerror("declaration -> declaration ; identifier_list : type : redefined varible Identifier in identifier_list!");
 								parser.yyerrok();
 							}
-							else {	// Éú³ÉÄ¿±ê´úÂë
+							else {	// ç”Ÿæˆç›®æ ‡ä»£ç 
 								if(i != ($3.idNameList)->size() - 1)
 									tmp_target += " " + (*($3.idNameList))[i] + ",";
 								else
@@ -309,12 +309,12 @@ declaration : declaration ';' identifier_list ':' type
 							declare_In.low = $5.array_bottom;
 							declare_In.high = $5.array_top;
 							declare_In.declareRow = lexer.yylineno;
-							// ²åÈëµ½·ûºÅ±í
+							// æ’å…¥åˆ°ç¬¦å·è¡¨
 							if(sym_table.insert((*($3.idNameList))[i], declare_In) == NULL) {
 								parser.yyerror("declaration -> declaration ; identifier_list : type : redefined array Identifier in identifier_list!");
 								parser.yyerrok();
 							}
-							else {	// Éú³ÉÄ¿±ê´úÂë
+							else {	// ç”Ÿæˆç›®æ ‡ä»£ç 
 								int array_range = $5.array_top - $5.array_bottom  + 1;
 								
 								stringstream ss; 
@@ -341,12 +341,12 @@ declaration : declaration ';' identifier_list ':' type
 							varInfo declare_In;
 							declare_In.type = $3.id_type;
 							declare_In.declareRow = lexer.yylineno;
-							// ²åÈëµ½·ûºÅ±í
+							// æ’å…¥åˆ°ç¬¦å·è¡¨
 							if(sym_table.insert((*($1.idNameList))[i], declare_In) == NULL) {
 								parser.yyerror("declaration -> identifier_list : type : redefined varible Identifier in identifier_list!");
 								parser.yyerrok();
 							}
-							else {	// Éú³ÉÄ¿±ê´úÂë
+							else {	// ç”Ÿæˆç›®æ ‡ä»£ç 
 								if(i != ($1.idNameList)->size() - 1)
 									tmp_target += " " + (*($1.idNameList))[i] + ",";
 								else
@@ -364,12 +364,12 @@ declaration : declaration ';' identifier_list ':' type
 							declare_In.low = $3.array_bottom;
 							declare_In.high = $3.array_top;
 							declare_In.declareRow = lexer.yylineno;
-							// ²åÈëµ½·ûºÅ±í
+							// æ’å…¥åˆ°ç¬¦å·è¡¨
 							if(sym_table.insert((*($1.idNameList))[i], declare_In) == NULL) {
 								parser.yyerror("declaration -> identifier_list : type : redefined array Identifier in identifier_list!");
 								parser.yyerrok();
 							}
-							else {	// Éú³ÉÄ¿±ê´úÂë
+							else {	// ç”Ÿæˆç›®æ ‡ä»£ç 
 								int array_range = $3.array_top - $3.array_bottom  + 1;
 								stringstream ss; 
 								string target;
@@ -398,7 +398,7 @@ type : standard_type
 				{
 					debug_stream<<"	YACC--type->ARRAY [ NUM . . NUM ] OF standard_type" << endl;
 					if($3.dataType != INT_T || $6.dataType != INT_T) {
-						parser.yyerror("type -> ARRAY [ NUM . . NUM ] OF standard_type : Êı×é²ÎÊıNUMÀàĞÍ´íÎó!");		/////////////////////////////////////////////////////// ÏÖÔÚ
+						parser.yyerror("type -> ARRAY [ NUM . . NUM ] OF standard_type : æ•°ç»„å‚æ•°NUMç±»å‹é”™è¯¯!");		/////////////////////////////////////////////////////// ç°åœ¨
 						parser.yyerrok();
 					} 
 					$$.id_type = $9.id_type;
@@ -406,7 +406,7 @@ type : standard_type
 					$$.array_top = (int)($6.num);
 					$$.array_bottom = (int)($3.num);
 					if($$.array_top - $$.array_bottom < 0) {
-						parser.yyerror("type -> ARRAY [ NUM . . NUM ] OF standard_type : Êı×éÏÂ½ç²»¿ÉĞ¡ÓÚÉÏ½ç!");
+						parser.yyerror("type -> ARRAY [ NUM . . NUM ] OF standard_type : æ•°ç»„ä¸‹ç•Œä¸å¯å°äºä¸Šç•Œ!");
 						parser.yyerrok();
 					}
 					$$.targetCode = new string(($9.targetCode)->data());
@@ -468,7 +468,7 @@ subprogram_declaration : subprogram_head declarations compound_statement
 					string tmp_target =  string($1->data()) + "\n" +  string($2->data()) + "\n" +  string($3->data()) + "\n}";
 					$$ = new string(tmp_target);
 					debug_stream << "	data() = " << ($$)->data() << endl;
-					// ÔÚÕâÀïÖØ¶¨Ïò
+					// åœ¨è¿™é‡Œé‡å®šå‘
 					sym_table.relocate();
 					currentFunction = "";
 				};
@@ -477,7 +477,7 @@ subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 				{
 					debug_stream << "	YACC--subprogram_head->FUNCTION ID arguments : standard_type ;" << endl;
 					
-					// ¸üĞÂfunctionTable
+					// æ›´æ–°functionTable
 					functionInfo funcID_In;
 					funcID_In.declareRow = lexer.yylineno;
 					funcID_In.retType = $5.id_type;
@@ -493,19 +493,19 @@ subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 						parser.yyerror("subprogram_head -> FUNCTION ID arguments : standard_type ; : redefined function id!");
 						parser.yyerrok();
 					}
-					//¶¨Ïò	
+					//å®šå‘	
 					sym_table.locate();
-					//¸üĞÂµ±Ç°º¯ÊıÃû
+					//æ›´æ–°å½“å‰å‡½æ•°å
 					currentFunction = string($2->data());
 					
-					//¸üĞÂ·ûºÅ±í£¬½«²ÎÊıÁĞ±í²åÈëµ½·ûºÅ±íÖĞ
+					//æ›´æ–°ç¬¦å·è¡¨ï¼Œå°†å‚æ•°åˆ—è¡¨æ’å…¥åˆ°ç¬¦å·è¡¨ä¸­
 					int j = 0;
 					for(i = 0;i < paraList.idNameList.size();i++){
 						if(paraList.tableTypeList[i] == VARIBLE_T){
 							varInfo varTemp;
 							varTemp.type = paraList.dataTypeList[i];
 							varTemp.declareRow = lexer.yylineno;
-							// ²åÈëµ½·ûºÅ±í
+							// æ’å…¥åˆ°ç¬¦å·è¡¨
 							if(sym_table.insert(paraList.idNameList[i], varTemp) == NULL) {
 								parser.yyerror("parameter_list -> VAR identifier_list : type : redefined variable id in identifier_list!");
 								parser.yyerrok();
@@ -520,7 +520,7 @@ subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 							j++;
 							declare_In.declareRow = lexer.yylineno;
 							
-							// ²åÈëµ½·ûºÅ±í
+							// æ’å…¥åˆ°ç¬¦å·è¡¨
 							if(sym_table.insert(paraList.idNameList[i], declare_In) == NULL) {
 								parser.yyerror("parameter_list -> VAR identifier_list : type : redefined array id in identifier_list!");
 								parser.yyerrok();
@@ -529,14 +529,14 @@ subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 						}
 					}
 					
-					//Çå¿Õ»º´æ
+					//æ¸…ç©ºç¼“å­˜
 					paraList.idNameList.clear();
 					paraList.dataTypeList.clear();
 					paraList.tableTypeList.clear();
 					arrayList.lowList.clear();
 					arrayList.highList.clear();
 					
-					// Éú³ÉÄ¿±ê´úÂë 
+					// ç”Ÿæˆç›®æ ‡ä»£ç  
 					string tmp_target =  string(($5.targetCode)->data()) + " " +  string($2->data()) +  string(($3.targetCode)->data()) + " {";
 					$$ = new string(tmp_target);
 					debug_stream << "	data() = " << ($$)->data() << endl;
@@ -554,7 +554,7 @@ subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 				{
 					debug_stream << "	YACC--subprogram_head->PROCEDURE ID arguments" << endl;
 					
-					// Ğ´Èë³ÌĞòID
+					// å†™å…¥ç¨‹åºID
 					procedureInfo porcID_In;
 					porcID_In.declareRow = lexer.yylineno;
 					porcID_In.paraNum = ($3.paraType)->size();
@@ -568,17 +568,17 @@ subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 						parser.yyerrok();
 					}
 					
-					// ĞÂ¿é£¬¶¨Ïò
+					// æ–°å—ï¼Œå®šå‘
 					sym_table.locate();
 					
-					//¸üĞÂ·ûºÅ±í£¬½«²ÎÊıÁĞ±í²åÈëµ½·ûºÅ±íÖĞ
+					//æ›´æ–°ç¬¦å·è¡¨ï¼Œå°†å‚æ•°åˆ—è¡¨æ’å…¥åˆ°ç¬¦å·è¡¨ä¸­
 					int j = 0;
 					for(i = 0;i < paraList.idNameList.size();i++){
 						if(paraList.tableTypeList[i] == VARIBLE_T){
 							varInfo varTemp;
 							varTemp.type = paraList.dataTypeList[i];
 							varTemp.declareRow = lexer.yylineno;
-							// ²åÈëµ½·ûºÅ±í
+							// æ’å…¥åˆ°ç¬¦å·è¡¨
 							if(sym_table.insert(paraList.idNameList[i], varTemp) == NULL) {
 								parser.yyerror("parameter_list -> VAR identifier_list : type : redefined variable id in identifier_list!");
 								parser.yyerrok();
@@ -592,7 +592,7 @@ subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 							j++;
 							declare_In.declareRow = lexer.yylineno;
 							
-							// ²åÈëµ½·ûºÅ±í
+							// æ’å…¥åˆ°ç¬¦å·è¡¨
 							if(sym_table.insert(paraList.idNameList[i], declare_In) == NULL) {
 								parser.yyerror("parameter_list -> VAR identifier_list : type : redefined array id in identifier_list!");
 								parser.yyerrok();
@@ -600,14 +600,14 @@ subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 							
 						}
 					}
-					//Çå¿Õ»º´æ
+					//æ¸…ç©ºç¼“å­˜
 					paraList.idNameList.clear();
 					paraList.dataTypeList.clear();
 					paraList.tableTypeList.clear();
 					arrayList.lowList.clear();
 					arrayList.highList.clear();
 					
-					// Éú³ÉÄ¿±ê´úÂë 
+					// ç”Ÿæˆç›®æ ‡ä»£ç  
 					string tmp_target = "void " +  string($2->data()) +  string(($3.targetCode)->data()) + "{";
 					$$ = new string(tmp_target);
 					debug_stream << "	data() = " << ($$)->data() << endl;
@@ -615,14 +615,14 @@ subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 				| PROCEDURE ID arguments error ';'
 				{
 					debug_stream << "	YACC--subprogram_head->PROCEDURE ID arguments error" << endl;
-					// ±¨´í
+					// æŠ¥é”™
 					parser.yyerror("subprogram_head -> PROCEDURE ID arguments error:  procedure cannot have a return type!");
 					parser.yyerrok();
 
-					// ĞÂ¿é£¬¶¨Ïò
+					// æ–°å—ï¼Œå®šå‘
 					sym_table.locate();
 					
-					// Ğ´Èë³ÌĞòID
+					// å†™å…¥ç¨‹åºID
 					procedureInfo porcID_In;
 					porcID_In.declareRow = lexer.yylineno;
 					porcID_In.paraNum = ($3.paraType)->size();
@@ -635,7 +635,7 @@ subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 						parser.yyerrok();
 					}
 					
-					// Éú³ÉÄ¿±ê´úÂë 
+					// ç”Ÿæˆç›®æ ‡ä»£ç  
 					string tmp_target = "void " +  string($2->data()) +  string(($3.targetCode)->data()) + "{";
 					$$ = new string(tmp_target);
 					debug_stream << "	data() = " << ($$)->data() << endl;
@@ -645,7 +645,7 @@ subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 arguments : '(' parameter_lists ')'
 				{
 					debug_stream << "	YACC--arguments->( parameter_lists )" << endl;
-					// ´«Öµ
+					// ä¼ å€¼
 					$$.paraType = new vector <DATA_TYPE>;
 					for(int i = 0; i < ($2.paraType)->size(); i++)
 					{
@@ -671,7 +671,7 @@ arguments : '(' parameter_lists ')'
 parameter_lists : parameter_lists ';' parameter_list
 				{
 					debug_stream << "	YACC--parameter_lists->parameter_lists ; parameter_list" << endl;
-					// ´«Öµ
+					// ä¼ å€¼
 					$$.paraType = new vector <DATA_TYPE>;
 					int i;
 					for(i = 0; i < ($1.paraType)->size(); i++) {
@@ -681,7 +681,7 @@ parameter_lists : parameter_lists ';' parameter_list
 						($$.paraType)->push_back((*($3.paraType))[i]);
 					}
 					
-					// Ä¿±ê´úÂë
+					// ç›®æ ‡ä»£ç 
 					string tmp_target =  string(($1.targetCode)->data()) + ", " +  string(($3.targetCode)->data());
 					$$.targetCode = new string(tmp_target);
 					debug_stream << "	data() = " << ($$.targetCode)->data() << endl;
@@ -689,14 +689,14 @@ parameter_lists : parameter_lists ';' parameter_list
 				| parameter_list
 				{
 					debug_stream << "	YACC--parameter_lists->parameter_list" << endl;
-					// ´«Öµ
+					// ä¼ å€¼
 					$$.paraType = new vector <DATA_TYPE>;
 					for(int i = 0; i < ($1.paraType)->size(); i++) {
 						($$.paraType)->push_back((*($1.paraType))[i]);
 					}
 					// check paraType number of parameter_list
 					debug_stream << "paraType number of parameter_list is " << ($1.paraType)->size() << endl;
-					// Ä¿±ê´úÂë
+					// ç›®æ ‡ä»£ç 
 					string tmp_target =  string(($1.targetCode)->data()) ;
 					$$.targetCode = new string(tmp_target);
 					debug_stream << "	data() = " << ($$.targetCode)->data() << endl;
@@ -710,18 +710,18 @@ parameter_list : VAR identifier_list ':' type
 					if($4.table_type == VARIBLE_T) {
 						string tmp_target =  string("");
 						for(int i = 0; i < ($2.idNameList)->size(); i++) {
-							//¸üĞÂ²ÎÊı±í£º
+							//æ›´æ–°å‚æ•°è¡¨ï¼š
 							paraList.idNameList.push_back((*($2.idNameList))[i]);
 							paraList.dataTypeList.push_back($4.id_type);
 							paraList.tableTypeList.push_back($4.table_type);
 							
-							// Éú³ÉÄ¿±ê´úÂë
+							// ç”Ÿæˆç›®æ ‡ä»£ç 
 							if(i != ($2.idNameList)->size() - 1)
 								tmp_target += string(($4.targetCode)->data()) + " &" + (*($2.idNameList))[i] + ",";
 							else
 								tmp_target += string(($4.targetCode)->data()) + " &" + (*($2.idNameList))[i];
 							
-							// ½«identifier_listÀàĞÍĞ´Èëµ½parameter_listÖĞ
+							// å°†identifier_listç±»å‹å†™å…¥åˆ°parameter_listä¸­
 							$$.paraType->push_back($4.id_type);
 						}
 						$$.targetCode = new string( tmp_target);
@@ -731,20 +731,20 @@ parameter_list : VAR identifier_list ':' type
 						string tmp_target =  string("");
 						for(int i = 0; i < ($2.idNameList)->size(); i++) {
 							
-							//¸üĞÂ²ÎÊı±í£º
+							//æ›´æ–°å‚æ•°è¡¨ï¼š
 							paraList.idNameList.push_back((*($2.idNameList))[i]);
 							paraList.dataTypeList.push_back($4.id_type);
 							paraList.tableTypeList.push_back($4.table_type);
 							arrayList.lowList.push_back($4.array_bottom);
 							arrayList.highList.push_back($4.array_top);
 							
-							// Éú³ÉÄ¿±ê´úÂë
+							// ç”Ÿæˆç›®æ ‡ä»£ç 
 							if(i != ($2.idNameList)->size() - 1)
 								tmp_target += string(($4.targetCode)->data()) + " &" + (*($2.idNameList))[i] + "[],";
 							else
 								tmp_target += string(($4.targetCode)->data()) + " &" + (*($2.idNameList))[i] + "[]";
 							
-							// ½«identifier_listÀàĞÍĞ´Èëµ½parameter_listÖĞ
+							// å°†identifier_listç±»å‹å†™å…¥åˆ°parameter_listä¸­
 							$$.paraType->push_back($4.id_type);
 						}
 						$$.targetCode = new string(tmp_target);	
@@ -759,18 +759,18 @@ parameter_list : VAR identifier_list ':' type
 					if($3.table_type == VARIBLE_T) {
 						string tmp_target =  string("");
 						for(int i = 0; i < ($1.idNameList)->size(); i++) {
-							//¸üĞÂ²ÎÊı±í£º
+							//æ›´æ–°å‚æ•°è¡¨ï¼š
 							paraList.idNameList.push_back((*($1.idNameList))[i]);
 							paraList.dataTypeList.push_back($3.id_type);
 							paraList.tableTypeList.push_back($3.table_type);
 							
-							// Éú³ÉÄ¿±ê´úÂë
+							// ç”Ÿæˆç›®æ ‡ä»£ç 
 							if(i != ($1.idNameList)->size() - 1)
 								tmp_target += string(($3.targetCode)->data()) + " " + (*($1.idNameList))[i] + ",";
 							else
 								tmp_target += string(($3.targetCode)->data()) + " " + (*($1.idNameList))[i];
 						
-							// ½«identifier_listÀàĞÍĞ´Èëµ½parameter_listÖĞ
+							// å°†identifier_listç±»å‹å†™å…¥åˆ°parameter_listä¸­
 							$$.paraType->push_back($3.id_type);
 						}
 						$$.targetCode = new string( tmp_target);
@@ -779,20 +779,20 @@ parameter_list : VAR identifier_list ':' type
 					else if($3.table_type == ARRAY_T) {
 						string tmp_target =  string("");
 						for(int i = 0; i < ($1.idNameList)->size(); i++) {
-							//¸üĞÂ²ÎÊı±í£º
+							//æ›´æ–°å‚æ•°è¡¨ï¼š
 							paraList.idNameList.push_back((*($1.idNameList))[i]);
 							paraList.dataTypeList.push_back($3.id_type);
 							paraList.tableTypeList.push_back($3.table_type);
 							arrayList.lowList.push_back($3.array_bottom);
 							arrayList.highList.push_back($3.array_top);
 							
-							// Éú³ÉÄ¿±ê´úÂë
+							// ç”Ÿæˆç›®æ ‡ä»£ç 
 							if(i != ($1.idNameList)->size() - 1)
 								tmp_target += string(($3.targetCode)->data()) + " " + (*($1.idNameList))[i] + "[],";
 							else
 								tmp_target += string(($3.targetCode)->data()) + " " + (*($1.idNameList))[i] + "[]";
 							
-							// ½«identifier_listÀàĞÍĞ´Èëµ½parameter_listÖĞ
+							// å°†identifier_listç±»å‹å†™å…¥åˆ°parameter_listä¸­
 							$$.paraType->push_back($3.id_type);
 						}
 						$$.targetCode = new string(tmp_target);	
@@ -803,7 +803,7 @@ parameter_list : VAR identifier_list ':' type
 compound_statement : BEGIN optional_statements END
 				{
 					debug_stream<<"	YACC--compound_statement->BEGIN optional_statements END"<<endl;
-					// begin ... end Èç¹ûÊÇfunction»òÕßprocedureµÄÒ»²¿·ÖµÄ»°²»ĞèÒª¼Ó"{"¡£("{"ÔÚfunction»òÕßprocedureÄÇĞ´)
+					// begin ... end å¦‚æœæ˜¯functionæˆ–è€…procedureçš„ä¸€éƒ¨åˆ†çš„è¯ä¸éœ€è¦åŠ "{"ã€‚("{"åœ¨functionæˆ–è€…procedureé‚£å†™)
 					string tmp_target = "";
 					tmp_target = tmp_target + "{\n";
 					tmp_target = tmp_target + string($2->data()) + "\n}// translate from END";
@@ -846,8 +846,8 @@ statement : variable ASSIGNOP expression
 					debug_stream<<"	YACC--statement->variable ASSIGNOP expression"<<endl;
 					if(($1.value_type != $3.value_type) && !($1.value_type == REAL_T && $3.value_type == INT_T))
 					{
-						// ±¨´í
-						parser.yyerror("statement -> variable ASSIGNOP expression : ¸³ÖµÀàĞÍ²»Æ¥Åä¡£");
+						// æŠ¥é”™
+						parser.yyerror("statement -> variable ASSIGNOP expression : èµ‹å€¼ç±»å‹ä¸åŒ¹é…ã€‚");
 						parser.yyerrok();
 					}
 					// target code
@@ -885,8 +885,8 @@ statement : variable ASSIGNOP expression
 					// value_type check
 					if($2.value_type != BOOL_T && $2.value_type != INT_T)
 					{
-						// ±¨´í
-						parser.yyerror("if Óï¾äÌõ¼şÖ»ÄÜÊÇint »òÕßboolÀàĞÍÅ¶Ç×");
+						// æŠ¥é”™
+						parser.yyerror("if è¯­å¥æ¡ä»¶åªèƒ½æ˜¯int æˆ–è€…boolç±»å‹å“¦äº²");
 						parser.yyerrok();
 					}
 					// target code
@@ -900,8 +900,8 @@ statement : variable ASSIGNOP expression
 					// value_type check
 					if($2.value_type != BOOL_T && $2.value_type != INT_T)
 					{
-						// ±¨´í
-						parser.yyerror("if Óï¾äÌõ¼şÖ»ÄÜÊÇint »òÕßboolÀàĞÍÅ¶Ç×");
+						// æŠ¥é”™
+						parser.yyerror("if è¯­å¥æ¡ä»¶åªèƒ½æ˜¯int æˆ–è€…boolç±»å‹å“¦äº²");
 						parser.yyerrok();
 					}
 					// target code
@@ -916,8 +916,8 @@ statement : variable ASSIGNOP expression
 					// value_type check
 					if($2.value_type != BOOL_T && $2.value_type != INT_T)
 					{
-						// ±¨´í
-						parser.yyerror("while Óï¾äÌõ¼şÖ»ÄÜÊÇint »òÕßboolÀàĞÍÅ¶Ç×");
+						// æŠ¥é”™
+						parser.yyerror("while è¯­å¥æ¡ä»¶åªèƒ½æ˜¯int æˆ–è€…boolç±»å‹å“¦äº²");
 						parser.yyerrok();
 					}
 					// target code
@@ -931,7 +931,7 @@ statement : variable ASSIGNOP expression
 				    // target code
 					string tmp_target = "cin";
 								
-					// ¼ì²é¶ÁÈë±äÁ¿ÊÇ·ñÒÑ¾­¶¨Òå
+					// æ£€æŸ¥è¯»å…¥å˜é‡æ˜¯å¦å·²ç»å®šä¹‰
 					for(int i = 0; i < ($3.idNameList)->size(); i++) {	
 						symbolTableItem* check = sym_table.get((*($3.idNameList))[i]);
 						if(check == NULL ) {
@@ -943,7 +943,7 @@ statement : variable ASSIGNOP expression
 							parser.yyerrok();
 						}
 						
-						//¸üĞÂtargetcode
+						//æ›´æ–°targetcode
 						tmp_target += " >> " + (*($3.idNameList))[i];
 					}
 					if(($3.idNameList)->size() == 0){
@@ -960,15 +960,15 @@ statement : variable ASSIGNOP expression
 					// target code
 					string tmp_target = "cout ";
 								
-					//¼ì²é±í´ïÊ½µÄºÏ·¨ĞÔÒÔ¼°Éú³ÉÄ¿±ê´úÂë
+					//æ£€æŸ¥è¡¨è¾¾å¼çš„åˆæ³•æ€§ä»¥åŠç”Ÿæˆç›®æ ‡ä»£ç 
 					for(int i = 0; i < ($3.idNameList)->size(); i++) {	
-						//write²ÎÊı²»¿ÉÒÔÓĞÊı×éÀàĞÍ
+						//writeå‚æ•°ä¸å¯ä»¥æœ‰æ•°ç»„ç±»å‹
 						if((*($3.tableTypeList))[i] == ARRAY_T ) {
-							parser.yyerror("writeº¯Êı²ÎÊı²»ÄÜÓĞÊı×é£¡");
+							parser.yyerror("writeå‡½æ•°å‚æ•°ä¸èƒ½æœ‰æ•°ç»„ï¼");
 						    parser.yyerrok();
 						}
 						else{
-							//¸üĞÂtargetcode
+							//æ›´æ–°targetcode
 						   tmp_target += "<<" + (*($3.idNameList))[i];
 						}
 					}
@@ -986,10 +986,10 @@ statement : variable ASSIGNOP expression
 variable : ID 
 				{				
 					debug_stream<<"	YACC--variable->ID "<<endl;
-					// ¼ì²é¶ÁÈë±äÁ¿ÊÇ·ñÒÑ¾­¶¨Òå
+					// æ£€æŸ¥è¯»å…¥å˜é‡æ˜¯å¦å·²ç»å®šä¹‰
 					symbolTableItem* check = sym_table.get(string($1->data()));	
 				    $$.targetCode = new string("");
-				    //·ûºÅ±íÖĞ²»´æÔÚ»ò±êÊ¶·û²»ÊÇ±äÁ¿
+				    //ç¬¦å·è¡¨ä¸­ä¸å­˜åœ¨æˆ–æ ‡è¯†ç¬¦ä¸æ˜¯å˜é‡
 					if(check == NULL) {
 						parser.yyerror("variable -> ID : ID not defined!");
 						parser.yyerrok();
@@ -1006,7 +1006,7 @@ variable : ID
 								parser.yyerrok();
 							}
 							else{
-								//º¯Êı·µ»Ø
+								//å‡½æ•°è¿”å›
 								$$.value_type = funcInfo->retType;
 								$$.targetCode = new string("return");
 								needReturn = true;
@@ -1027,9 +1027,9 @@ variable : ID
 				| ID '[' expression ']'
 				{
 					debug_stream<<"	YACC--variable->ID [ expression ]"<<endl;
-					// ¼ì²éÊÇ·ñÒÑ¾­¶¨Òå
+					// æ£€æŸ¥æ˜¯å¦å·²ç»å®šä¹‰
 					symbolTableItem* check = sym_table.get(string($1->data()));	
-				    //·ûºÅ±íÖĞ²»´æÔÚ»ò±êÊ¶·û²»ÊÇÊı×é
+				    //ç¬¦å·è¡¨ä¸­ä¸å­˜åœ¨æˆ–æ ‡è¯†ç¬¦ä¸æ˜¯æ•°ç»„
 					if(check == NULL || check->type != ARRAY_T ) {
 							parser.yyerror("variable -> ID [ expression ] : id can only be an array!");
 							parser.yyerrok();
@@ -1038,7 +1038,7 @@ variable : ID
 						arrayInfo* arrInfo = sym_table.getArray(check->address);
 						$$.value_type = arrInfo->type;
 					}
-					// ¼ì²éexpressionÀàĞÍÊÇ²»ÊÇint
+					// æ£€æŸ¥expressionç±»å‹æ˜¯ä¸æ˜¯int
 					if($3.value_type != INT_T)
 					{
 						parser.yyerror("variable -> ID [ expression ] : expression needs to be of integer type!");
@@ -1056,7 +1056,7 @@ procedure_call_statement : ID
 					symbolTableItem* check = sym_table.get(string($1->data()));
 					// target code
 					string tmp_target = "";					
-				    // ¼ì²éÊÇ·ñÒÑ¾­¶¨Òå
+				    // æ£€æŸ¥æ˜¯å¦å·²ç»å®šä¹‰
 					if(check == NULL) {
 							parser.yyerror("procedure_call_statement -> ID : id not defined !");
 							parser.yyerrok();
@@ -1078,7 +1078,7 @@ procedure_call_statement : ID
 					debug_stream<<"	YACC--procedure_call_statement->ID ( expr_list )"<<endl;
 					string tmp_target =  string("");
 					symbolTableItem* check = sym_table.get(string($1->data()));	
-				    // ¼ì²éÊÇ·ñÒÑ¾­¶¨Òå
+				    // æ£€æŸ¥æ˜¯å¦å·²ç»å®šä¹‰
 					if(check == NULL) {
 						parser.yyerror("procedure_call_statement -> ID ( expr_list ): id not defined!");
 						parser.yyerrok();
@@ -1092,7 +1092,7 @@ procedure_call_statement : ID
 							for(int i = 0; i < ($3.idNameList)->size(); i++)
 							{
 								if((*($3.dataTypeList))[i] != (proceInfo->paraType)[i]) {
-									parser.yyerror("procedure_call_statement -> ID ( expr_list ) : ¹ı³Ì²ÎÊıÀàĞÍ²»Æ¥Åä¡£");
+									parser.yyerror("procedure_call_statement -> ID ( expr_list ) : è¿‡ç¨‹å‚æ•°ç±»å‹ä¸åŒ¹é…ã€‚");
 									parser.yyerrok();
 								}
 							} // end of for
@@ -1104,14 +1104,14 @@ procedure_call_statement : ID
 					else if(check->type == FUNCTION_T) {
 						functionInfo* funcInfo = sym_table.getFunction(check->address);
 						if(($3.idNameList)->size() != funcInfo->paraNum) {
-							parser.yyerror("procedure_call_statement -> ID ( expr_list ) : ×Ó³ÌĞò²ÎÊı¸öÊı²»Æ¥Åä¡£");
+							parser.yyerror("procedure_call_statement -> ID ( expr_list ) : å­ç¨‹åºå‚æ•°ä¸ªæ•°ä¸åŒ¹é…ã€‚");
 							parser.yyerrok();
 						}
 						else {
 							for(int i = 0; i < ($3.idNameList)->size(); i++)
 							{
 								if((*($3.dataTypeList))[i] != (funcInfo->paraType)[i]) {
-									parser.yyerror("procedure_call_statement -> ID ( expr_list ) : ×Ó³ÌĞò²ÎÊıÀàĞÍ²»Æ¥Åä¡£");
+									parser.yyerror("procedure_call_statement -> ID ( expr_list ) : å­ç¨‹åºå‚æ•°ç±»å‹ä¸åŒ¹é…ã€‚");
 									parser.yyerrok();
 								}
 							} // end of for
@@ -1121,7 +1121,7 @@ procedure_call_statement : ID
 						} // end of else
 					} // end of else if
 					else{
-						parser.yyerror("procedure_call_statement -> ID ( expr_list ) : ¹ı³Ì²ÎÊı¸öÊı²»Æ¥Åä!");
+						parser.yyerror("procedure_call_statement -> ID ( expr_list ) : è¿‡ç¨‹å‚æ•°ä¸ªæ•°ä¸åŒ¹é…!");
 						parser.yyerrok();
 					}
 					
@@ -1135,13 +1135,13 @@ expr_list : expr_list ',' expression
 					$$.idNameList = new vector <string>;
 					$$.dataTypeList = new vector <DATA_TYPE>;
 					$$.tableTypeList = new vector <TABLE_TYPE>;
-					// ¼ÇÂ¼ÒÑ¾­´æÈëµÄÖµ
+					// è®°å½•å·²ç»å­˜å…¥çš„å€¼
 					for(int i = 0; i < ($1.idNameList)->size(); i++) {
 						($$.idNameList)->push_back((*($1.idNameList))[i]);
 						($$.dataTypeList)->push_back((*($1.dataTypeList))[i]);
 						($$.tableTypeList)->push_back((*($1.tableTypeList))[i]);
 					} // end of for
-					// Ğ´ÈëĞÂÖµ
+					// å†™å…¥æ–°å€¼
 					($$.idNameList)->push_back(string(($3.targetCode)->data()));
 					($$.dataTypeList)->push_back($3.value_type);
 					($$.tableTypeList)->push_back($3.table_type);
@@ -1156,7 +1156,7 @@ expr_list : expr_list ',' expression
 					$$.idNameList = new vector <string>;
 					$$.dataTypeList = new vector <DATA_TYPE>;
 					$$.tableTypeList = new vector <TABLE_TYPE>;
-					// Ğ´ÈëĞÂÖµ
+					// å†™å…¥æ–°å€¼
 					($$.idNameList)->push_back(string(($1.targetCode)->data()));
 					($$.dataTypeList)->push_back($1.value_type);
 					($$.tableTypeList)->push_back($1.table_type);
@@ -1172,7 +1172,7 @@ expression : simple_expr RELOP simple_expr
 					$$.value_type = BOOL_T;
 					$$.table_type = VARIBLE_T;
 					string tmp_target =  string("");
-					// ¼ì²é²Ù×÷ÊıÀàĞÍ
+					// æ£€æŸ¥æ“ä½œæ•°ç±»å‹
 					/*
 					if(($1.table_type == PROCEDURE_T || $1.value_type == RECORD_T) || ($3.table_type == PROCEDURE_T || $3.value_type == RECORD_T))
 					{
@@ -1203,7 +1203,7 @@ expression : simple_expr RELOP simple_expr
 						}
 					}
 					else {
-							parser.yyerror("expression -> simple_expr RELOP simple_expr : ¹ØÏµÔËËãÀàĞÍÆ¥Åä³ö´í£¡");
+							parser.yyerror("expression -> simple_expr RELOP simple_expr : å…³ç³»è¿ç®—ç±»å‹åŒ¹é…å‡ºé”™ï¼");
 							parser.yyerrok();
 					}
 					tmp_target = string(($1.targetCode)->data()) + string(($2)->data()) + string(($3.targetCode)->data());
@@ -1231,7 +1231,7 @@ simple_expr : simple_expr ADDOP term
 					if(string($2->data()) == "or") {
 						$$.value_type = BOOL_T;
 						if($1.value_type != BOOL_T || $3.value_type != BOOL_T) {
-							parser.yyerror("simple_expr -> simple_expr ADDOP simple_expr : »òÔËËãÀàĞÍÆ¥Åä³ö´í£¡");
+							parser.yyerror("simple_expr -> simple_expr ADDOP simple_expr : æˆ–è¿ç®—ç±»å‹åŒ¹é…å‡ºé”™ï¼");
 							parser.yyerrok();
 						}
 						else {
@@ -1249,7 +1249,7 @@ simple_expr : simple_expr ADDOP term
 							}
 						}
 						else {
-							parser.yyerror("simple_expr -> simple_expr ADDOP simple_expr : ADDOPÔËËãÀàĞÍÆ¥Åä³ö´í£¡");
+							parser.yyerror("simple_expr -> simple_expr ADDOP simple_expr : ADDOPè¿ç®—ç±»å‹åŒ¹é…å‡ºé”™ï¼");
 							parser.yyerrok();
 						}
 						// target code
@@ -1287,7 +1287,7 @@ term : term MULOP factor
 					if(string($2->data()) == "and") {
 						$$.value_type = BOOL_T;
 						if($1.value_type != BOOL_T || $3.value_type != BOOL_T) {
-							parser.yyerror("expression -> simple_expr MULOP simple_expr : ÓëÔËËãÀàĞÍÆ¥Åä³ö´í£¡");
+							parser.yyerror("expression -> simple_expr MULOP simple_expr : ä¸è¿ç®—ç±»å‹åŒ¹é…å‡ºé”™ï¼");
 							parser.yyerrok();
 						}
 						else {
@@ -1298,7 +1298,7 @@ term : term MULOP factor
 					else if(string($2->data()) == "div") {
 						$$.value_type = INT_T;
 						if($1.value_type != INT_T || $3.value_type != INT_T) {
-							parser.yyerror("expression -> simple_expr MULOP simple_expr : divÔËËãÀàĞÍÆ¥Åä³ö´í£¡");
+							parser.yyerror("expression -> simple_expr MULOP simple_expr : divè¿ç®—ç±»å‹åŒ¹é…å‡ºé”™ï¼");
 							parser.yyerrok();
 						}
 						else {
@@ -1309,7 +1309,7 @@ term : term MULOP factor
 					else if(string($2->data()) == "mod") {
 						$$.value_type = INT_T;
 						if($1.value_type != INT_T || $3.value_type != INT_T) {
-							parser.yyerror("expression -> simple_expr MULOP simple_expr : modÔËËãÀàĞÍÆ¥Åä³ö´í£¡");
+							parser.yyerror("expression -> simple_expr MULOP simple_expr : modè¿ç®—ç±»å‹åŒ¹é…å‡ºé”™ï¼");
 							parser.yyerrok();
 						}
 						else {
@@ -1327,7 +1327,7 @@ term : term MULOP factor
 							}
 						}
 						else {
-							parser.yyerror("expression -> simple_expr MULOP simple_expr : MULOPÔËËãÀàĞÍÆ¥Åä³ö´í£¡");
+							parser.yyerror("expression -> simple_expr MULOP simple_expr : MULOPè¿ç®—ç±»å‹åŒ¹é…å‡ºé”™ï¼");
 							parser.yyerrok();
 						}
 						// target code
@@ -1351,7 +1351,7 @@ factor : ID
 					string tmp_target = string("");
 					symbolTableItem* check = sym_table.get(string($1->data()));
 					if(check == NULL) {
-						parser.yyerror("factor -> ID : ID not defined »òÕßÊÇ ²ÎÊıÎª¹ı³Ì");
+						parser.yyerror("factor -> ID : ID not defined æˆ–è€…æ˜¯ å‚æ•°ä¸ºè¿‡ç¨‹");
 						parser.yyerrok();
 					}
 					else if(check->type == PROCEDURE_T) {
@@ -1362,7 +1362,7 @@ factor : ID
 						if(check->type == FUNCTION_T) {
 							functionInfo* funcInfo = sym_table.getFunction(check->address);
 							if( funcInfo->paraNum > 0) {
-								parser.yyerror("factor -> ID : ×Óº¯Êı²ÎÊı¸öÊı²»Æ¥Åä!");
+								parser.yyerror("factor -> ID : å­å‡½æ•°å‚æ•°ä¸ªæ•°ä¸åŒ¹é…!");
 								parser.yyerrok();
 							}
 						else {
@@ -1391,7 +1391,7 @@ factor : ID
 					debug_stream<<"	YACC--factor->ID ( expr_list )"<<endl;
 					string tmp_target =  string("");
 					symbolTableItem* check = sym_table.get(string($1->data()));	
-				    // ¼ì²éÊÇ·ñÒÑ¾­¶¨Òå
+				    // æ£€æŸ¥æ˜¯å¦å·²ç»å®šä¹‰
 					if(check == NULL) {
 							parser.yyerror("factor -> ID ( expr_list ) : ID not defined!");
 							cout << "		ID = " << string($1->data()) << endl;
@@ -1405,7 +1405,7 @@ factor : ID
 						if(check->type == FUNCTION_T) {
 							functionInfo* funcInfo = sym_table.getFunction(check->address);
 							if(($3.idNameList)->size() != funcInfo->paraNum) {
-								parser.yyerror("factor -> ID ( expr_list ) : ×Óº¯Êı²ÎÊı¸öÊı²»Æ¥Åä!");
+								parser.yyerror("factor -> ID ( expr_list ) : å­å‡½æ•°å‚æ•°ä¸ªæ•°ä¸åŒ¹é…!");
 								cout << "		should have: " << funcInfo->paraNum << ", now have: " << ($3.idNameList)->size() << endl;
 								// for(int i = 0; i < funcInfo->paraNum; i++)
 								// {
@@ -1418,12 +1418,12 @@ factor : ID
 								for(int i = 0; i < ($3.idNameList)->size(); i++)
 								{
 									if((*($3.tableTypeList))[i] != (funcInfo->tableType)[i]) {
-										parser.yyerror("factor -> ID ( expr_list ) : ×Óº¯Êı²ÎÊıÀàĞÍ²»Æ¥Åä!£¨Èç£ºÊı×é±äÁ¿´«µİ¸ø»ù±¾ÀàĞÍ±äÁ¿£©");
+										parser.yyerror("factor -> ID ( expr_list ) : å­å‡½æ•°å‚æ•°ç±»å‹ä¸åŒ¹é…!ï¼ˆå¦‚ï¼šæ•°ç»„å˜é‡ä¼ é€’ç»™åŸºæœ¬ç±»å‹å˜é‡ï¼‰");
 										parser.yyerrok();
 									}
 																		
 									if((*($3.dataTypeList))[i] != (funcInfo->paraType)[i]) {
-										parser.yyerror("factor -> ID ( expr_list ) : ×Óº¯Êı²ÎÊıÊı¾İÀàĞÍ²»Æ¥Åä!£¨Èçint±äÁ¿´«µİ¸øbool±äÁ¿£©");
+										parser.yyerror("factor -> ID ( expr_list ) : å­å‡½æ•°å‚æ•°æ•°æ®ç±»å‹ä¸åŒ¹é…!ï¼ˆå¦‚intå˜é‡ä¼ é€’ç»™boolå˜é‡ï¼‰");
 										parser.yyerrok();
 									}
 								} // end of for
@@ -1436,14 +1436,14 @@ factor : ID
 						else if(check->type == PROCEDURE_T) {
 							procedureInfo* procInfo = sym_table.getProcedure(check->address);
 							if(($3.idNameList)->size() != procInfo->paraNum) {
-								parser.yyerror("factor -> ID ( expr_list ) : ×Óº¯Êı²ÎÊı¸öÊı²»Æ¥Åä!");
+								parser.yyerror("factor -> ID ( expr_list ) : å­å‡½æ•°å‚æ•°ä¸ªæ•°ä¸åŒ¹é…!");
 								parser.yyerrok();
 							}
 							else {
 								for(int i = 0; i < ($3.idNameList)->size(); i++)
 								{
 									if((*($3.dataTypeList))[i] != (procInfo->paraType)[i]) {
-										parser.yyerror("factor -> ID ( expr_list ) : ×Óº¯Êı²ÎÊıÀàĞÍ²»Æ¥Åä!");
+										parser.yyerror("factor -> ID ( expr_list ) : å­å‡½æ•°å‚æ•°ç±»å‹ä¸åŒ¹é…!");
 										parser.yyerrok();
 									}
 								} // end of for
@@ -1461,25 +1461,25 @@ factor : ID
 				{
 					debug_stream<<"	YACC--factor->ID [ expr_list ]"<<endl;
 					string tmp_target =  string("");
-					// ²éÑ¯·ûºÅ±í
+					// æŸ¥è¯¢ç¬¦å·è¡¨
 					symbolTableItem* check = sym_table.get(string($1->data()));	
-					// ¼ì²éÊÇ·ñÒÑ¾­¶¨Òå
+					// æ£€æŸ¥æ˜¯å¦å·²ç»å®šä¹‰
 					if(check == NULL) {
 							parser.yyerror("factor -> ID ( expr_list ) : ID not defined!");
 							parser.yyerrok();
 					}
 					else {
-						// ¼ì²éidÊÇ·ñÊı×éÀàĞÍ 
+						// æ£€æŸ¥idæ˜¯å¦æ•°ç»„ç±»å‹ 
 						if(check->type != ARRAY_T) {
 							parser.yyerror("factor -> id [ expression ] : id is not an array!");
 							parser.yyerrok();
 						}
-						// ¼ì²éexpr_listÊÇ·ñÕûÀàĞÍ
+						// æ£€æŸ¥expr_listæ˜¯å¦æ•´ç±»å‹
 						if( ($3.table_type != VARIBLE_T) || ($3.value_type != INT_T) ) {
 							parser.yyerror("factor -> id [ expression ] : expression not of integer type!");
 							parser.yyerrok();
 						}
-						// ¼ÇÂ¼factorÀàĞÍ
+						// è®°å½•factorç±»å‹
 						arrayInfo* arrayInfo = sym_table.getArray(check->address);
 						$$.value_type = arrayInfo->type;
 						$$.table_type = VARIBLE_T;
@@ -1491,7 +1491,7 @@ factor : ID
 				| NUM
 				{
 					debug_stream<<"	YACC--factor->NUM"<<endl;
-					$$.value_type = $1.dataType; //////////////////////////////////////////////////////////ÕâÀïÓĞÎÊÌâ£¬°´ÕÕÏÖÔÚÕâÑù´¦Àí£¬Õâ¸önum×ÜÊÇrealÀàĞÍ£¬µ«Êµ¼ÊÉÏnum¿ÉÄÜÊÇintĞÍ
+					$$.value_type = $1.dataType; //////////////////////////////////////////////////////////è¿™é‡Œæœ‰é—®é¢˜ï¼ŒæŒ‰ç…§ç°åœ¨è¿™æ ·å¤„ç†ï¼Œè¿™ä¸ªnumæ€»æ˜¯realç±»å‹ï¼Œä½†å®é™…ä¸Šnumå¯èƒ½æ˜¯intå‹
 					$$.table_type = VARIBLE_T;
 					$$.targetCode = new string(($1.targetCode)->data());
 					debug_stream << "	data() = " << ($$.targetCode)->data() << endl;
@@ -1508,7 +1508,7 @@ factor : ID
 				| NOT factor
 				{
 					debug_stream<<"	YACC--factor->NOT factor"<<endl;
-					// ¼ì²éfactorÀàĞÍ
+					// æ£€æŸ¥factorç±»å‹
 					if($2.value_type != BOOL_T || $2.table_type != VARIBLE_T) {
 						parser.yyerror("factor -> NOT factor : rear factor has to be bool");
 						parser.yyerrok();
@@ -1562,45 +1562,45 @@ int main(void)
 	string sourceFile;
 	string targetFile;
 	
-	// ¶ÁÈëPASCALÔ´ÎÄ¼ş
-	cout<<"ÇëÊäÈëpascalµÄÔ´ÎÄ¼şÃû:";
+	// è¯»å…¥PASCALæºæ–‡ä»¶
+	cout<<"è¯·è¾“å…¥pascalçš„æºæ–‡ä»¶å:";
 	cin>>sourceFile;
 	in_stream.open(sourceFile.data());
-	lexer.yyin=&in_stream;//°Ñ¶ÁÈëÎÄ¼şÃû¸³Óè´Ê·¨·ÖÎö
+	lexer.yyin=&in_stream;//æŠŠè¯»å…¥æ–‡ä»¶åèµ‹äºˆè¯æ³•åˆ†æ
 	if(!in_stream) 
 	{
-		printf("pascalµÄÔ´ÎÄ¼ş´ò¿ªÊ§°Ü£¡\n");
+		printf("pascalçš„æºæ–‡ä»¶æ‰“å¼€å¤±è´¥ï¼\n");
 	    return 0;
 	}
 	if(lexer.yyin==NULL)
 	{
-	    printf("pascalµÄÔ´ÎÄ¼ş´ò¿ªÊ§°Ü£¡\n");
+	    printf("pascalçš„æºæ–‡ä»¶æ‰“å¼€å¤±è´¥ï¼\n");
 	    return 0;
 	}
-	// È·ÈÏÊä³öÄ¿±êÎÄ¼ş
-	cout<<"ÇëÊäÈëcppÎÄ¼şÃû:";
+	// ç¡®è®¤è¾“å‡ºç›®æ ‡æ–‡ä»¶
+	cout<<"è¯·è¾“å…¥cppæ–‡ä»¶å:";
 	cin>>targetFile;
 	out_stream.open(targetFile.data());
 	lexer.yyout=&out_stream;
 	if(!out_stream)
 	{
-	    printf("Éú³ÉÄ¿±êÎÄ¼şÊ§°Ü£¡\n");
+	    printf("ç”Ÿæˆç›®æ ‡æ–‡ä»¶å¤±è´¥ï¼\n");
 	    return 0;
 	}
 	if(lexer.yyout==NULL)
 	{
-	    printf("Éú³ÉÄ¿±êÎÄ¼şÊ§°Ü£¡\n");
+	    printf("ç”Ÿæˆç›®æ ‡æ–‡ä»¶å¤±è´¥ï¼\n");
 	    return 0;
 	}
 	*/
 
 	in_stream.open("E:/pascal/source_code.txt");
-	lexer.yyin=&in_stream;//°Ñ¶ÁÈëÎÄ¼şÃû¸³Óè´Ê·¨·ÖÎö
+	lexer.yyin=&in_stream;//æŠŠè¯»å…¥æ–‡ä»¶åèµ‹äºˆè¯æ³•åˆ†æ
 
 	out_stream.open("E:/pascal/target_code.txt", ios::out);
 	lexer.yyout=&out_stream;
 
-	// ´ò¿ª´íÎóĞÅÏ¢Êä³öÁ÷
+	// æ‰“å¼€é”™è¯¯ä¿¡æ¯è¾“å‡ºæµ
 	error_stream.open("E:/pascal/pascal error.txt", ios::out);
 	if(error_stream.fail())
 	{
@@ -1608,7 +1608,7 @@ int main(void)
 	    return 0;
 	}
 
-	// ´ò¿ªµ÷ÊÔÊä³öÁ÷
+	// æ‰“å¼€è°ƒè¯•è¾“å‡ºæµ
 	debug_stream.open("E:/pascal/pascal debug.txt", ios::out);
 	if(debug_stream.fail())
 	{
@@ -1616,8 +1616,8 @@ int main(void)
 	    return 0;
 	}
 
-	// ¿ªÊ¼·ÖÎö
-	if (parser.yycreate(&lexer)) {//·ÖÎö³ÌĞò
+	// å¼€å§‹åˆ†æ
+	if (parser.yycreate(&lexer)) {//åˆ†æç¨‹åº
 		if (lexer.yycreate(&parser)) {
 			n = parser.yyparse();
 		}

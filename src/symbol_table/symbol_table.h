@@ -53,7 +53,6 @@ namespace PascalSToCPP
                    ret_type == rhs.ret_type;
         }
 
-
         bool operator!=(const Type &rhs) const
         {
             return !((*this) == rhs);
@@ -78,6 +77,12 @@ namespace PascalSToCPP
         bool isArray() const noexcept
         {
             return type != BasicType::CALLABLE && dimension > 0;
+        }
+
+        // 判断类型是否为可调用对象
+        bool isCallable() const noexcept
+        {
+            return type == BasicType::CALLABLE;
         }
 
         // 如果类型为数组, 则返回其各个维度周期的字符串表示(e.g. [a][b][c])
@@ -119,6 +124,9 @@ namespace PascalSToCPP
         std::string name{}; // identifier
         Type type{};
         std::size_t def_at{kHasNoDefAt};
+
+        // 判断类型是否为可调用对象
+        bool isCallable() const noexcept { return type.isCallable(); }
 
         // 判断该符号是否已定义但未使用
         bool isDefButNotUsed() const noexcept { return def_at != kHasNoDefAt && ref_at.empty(); }
@@ -190,10 +198,10 @@ namespace PascalSToCPP
         const Symbol &getSymbol(const int symbol_ind) const;
 
         // 如果当前作用域不为全局作用域, 返回其父作用域对应的符号
-        const Symbol &getParentSymbol() const
+        const Symbol *const getParentSymbol() const
         {
             assert(!isInGlobalScope());
-            return getSymbolGlobal(scope_ind_);
+            return &getSymbolGlobal(scope_ind_);
         }
 
         // 返回当前作用域是否为全局作用域
