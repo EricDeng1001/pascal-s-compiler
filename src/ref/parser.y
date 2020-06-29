@@ -1394,11 +1394,7 @@ factor : ID
 							if(($3.idNameList)->size() != funcInfo->paraNum) {
 								parser.yyerror("factor -> ID ( expr_list ) : 子函数参数个数不匹配!");
 								cout << "		should have: " << funcInfo->paraNum << ", now have: " << ($3.idNameList)->size() << endl;
-								// for(int i = 0; i < funcInfo->paraNum; i++)
-								// {
-									// cout << funcInfo->paraType[i] << ", ";
-								// }
-								// cout << endl;
+
 								parser.yyerrok();
 							}
 							else {
