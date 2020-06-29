@@ -22,8 +22,9 @@ namespace PascalSToCPP
         CHAR,
         BOOLEAN,
         CALLABLE, // procedure, function
+        VOID,
         FIRST_VAL = INTEGER,
-        LAST_VAL = CALLABLE
+        LAST_VAL = VOID,
     };
 
     /**
@@ -71,12 +72,18 @@ namespace PascalSToCPP
 
         // 当类型为可调用类型时
         std::deque<Type> args{};
-        std::optional<BasicType> ret_type{std::nullopt}; // nullopt if procedure
+        BasicType ret_type{BasicType::VOID}; // nullopt if procedure
 
         // 判断类型是否为数组
         bool isArray() const noexcept
         {
             return type != BasicType::CALLABLE && dimension > 0;
+        }
+
+        // 判断类型是否为可调用对象
+        bool isCallable() const noexcept
+        {
+            return type == BasicType::CALLABLE;
         }
 
         // 如果类型为数组, 则返回其各个维度周期的字符串表示(e.g. [a][b][c])
@@ -97,7 +104,7 @@ namespace PascalSToCPP
         bool hasRetVal() const noexcept
         {
             assert(type == BasicType::CALLABLE); // 检查是否对不可调用对象检查是否有返回值
-            return ret_type != std::nullopt;
+            return ret_type != BasicType::VOID;
         }
     };
 
@@ -118,6 +125,9 @@ namespace PascalSToCPP
         std::string name{}; // identifier
         Type type{};
         std::size_t def_at{kHasNoDefAt};
+
+        // 判断类型是否为可调用对象
+        bool isCallable() const noexcept { return type.isCallable(); }
 
         // 判断该符号是否已定义但未使用
         bool isDefButNotUsed() const noexcept { return def_at != kHasNoDefAt && ref_at.empty(); }
@@ -189,7 +199,7 @@ namespace PascalSToCPP
         const Symbol &getSymbol(const int symbol_ind) const;
 
         // 如果当前作用域不为全局作用域, 返回其父作用域对应的符号
-        Symbol getParentSymbol() const
+        const Symbol &getParentSymbol() const
         {
             assert(!isInGlobalScope());
             return getSymbolGlobal(scope_ind_);
