@@ -72,7 +72,7 @@ namespace PascalSToCPP
 
         // 当类型为可调用类型时
         std::deque<Type> args{};
-        std::optional<BasicType> ret_type{std::nullopt}; // nullopt if procedure
+        BasicType ret_type{BasicType::VOID}; // nullopt if procedure
 
         // 判断类型是否为数组
         bool isArray() const noexcept
@@ -98,7 +98,7 @@ namespace PascalSToCPP
         bool hasRetVal() const noexcept
         {
             assert(type == BasicType::CALLABLE); // 检查是否对不可调用对象检查是否有返回值
-            return ret_type != std::nullopt;
+            return ret_type != BasicType::VOID;
         }
     };
 
