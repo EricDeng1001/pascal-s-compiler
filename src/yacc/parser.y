@@ -23,7 +23,7 @@ SymbolTable sym_table;
 
 %union
 {
-	string* targetCode;
+	string *targetCode;
 
 	struct
 	{
@@ -34,7 +34,7 @@ SymbolTable sym_table;
 
 	struct
 	{
-		vector <string>* names;
+		vector<string> *names;
 	} idList;
 
 	struct
@@ -49,13 +49,13 @@ SymbolTable sym_table;
 		Typeptr type;
 		int arrayTop;
 		int arrayBottom;
-		string* targetCode;
+		string *targetCode;
 	} typeStruct;
 
 	struct
 	{
-		vector <struct Type>* paraType;
-		string* targetCode;
+		vector<pair<Type, vector<string>>> *paraTypeAndNames;
+		string *targetCode;
 	} parameterStruct;
 
 	struct
@@ -63,7 +63,6 @@ SymbolTable sym_table;
 		Typeptr type;
 		string* targetCode;
 	}expStruct;
-
 }
 
 %token <targetCode> PROGRAM VAR ARRAY OF RECORD INTEGER REAL BOOLEAN FUNCTION PROCEDURE  DO
@@ -219,25 +218,29 @@ standard_type: INTEGER
 
 subprogram_declarations : subprogram_declarations subprogram_declaration ';'
 				{
-
+					string temp = string($1->data()) + "\n" + string($2->data());
+					$$ = new string(temp);
 				}
 				|
 				{
-
+					$$ = new string("");
 				};
 
 subprogram_declaration : subprogram_head declarations compound_statement
 				{
-
+					string temp = string($1->data()) + "\n" + string($2->data()) + "\n" + string($3->data()) + "\n}\n";
+					$$ = new string(temp);
+					//TODO重定向
 				};
 
 subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 				{
 
+
 				}
 				| FUNCTION ID arguments error
 				{
-
+				}
 				| PROCEDURE ID arguments ';'
 				{
 
@@ -250,13 +253,19 @@ subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 
 arguments : '(' parameter_lists ')'
 				{
-
+					$$.paraType = new vector <DATA_TYPE>;
+					for(int i = 0; i < ($2.paraType)->size(); i++)
+					{
+						($$.paraType)->push_back((*($2.paraType))[i]);
+					}
+					string temp = "(" + string(($2.targetCode)->data()) + ")";
+					$$.targetCode = new string(temp);
 				}
 				|
 				{
-
+					string temp = "()";
+					$$.targetCode = new string(temp);
 				};
-
 parameter_lists : parameter_lists ';' parameter_list
 				{
 
@@ -266,18 +275,66 @@ parameter_lists : parameter_lists ';' parameter_list
 
 				};
 
+	struct
+	{
+		vector<pair<Type, vector<string>>> *paraTypeAndNames;
+		string *targetCode;
+	} parameterStruct;
+
+	struct
+	{
+		vector<string> *names;
+	} idList;
+
+	struct
+	{
+		Type type;
+		int arrayTop;
+		int arrayBottom;
+		string *targetCode;
+	} typeStruct;
 parameter_list : VAR identifier_list ':' type
 				{
+					// 填写参数表
+					Type &temp_type = *($4.type);
+					temp_type.is_ref = true;
 
+					$$.paraTypeAndNames = new vector<pair<Type, vector<string>>>();
+				    $$.paraTypeAndNames->push_back({temp_type, *($2.names)});
+					
+					$$.targetCode = new string();
+
+					for (int i = 0; i < $2->size(); i++)
+					{
+						$$.targetCode->append(*($4.targetCode));
+						if (temp_type.type != BasicType::CALLABLE && temp_type.dimension)
+						$$.targetCode->append(" &")
+									 ->append($2.names[i])
+									 ->append(", ");
+					}
+					$$.targetCode->pop_back();
 				}
 				|  identifier_list ':' type
 				{
+				    // 填写参数表
+					$$.paraTypeAndNames = new vector<pair<Type, vector<string>>>();
+				    $$.paraTypeAndNames->push_back({$4.type, *($2.names)});
+					
+					$$.targetCode = new string();
 
+					for (int i = 0; i < $2->size(); i++)
+					{
+						$$.targetCode->append(*($4.targetCode))
+									 ->append(" &")
+									 ->append($2.names[i])
+									 ->append(", ");
+					}
+					$$.targetCode->pop_back();
 				};
 
 compound_statement : BEGIN optional_statements END
 				{
-
+					
 				};
 
 optional_statements : statement_list
