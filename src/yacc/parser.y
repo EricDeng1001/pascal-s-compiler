@@ -37,9 +37,9 @@ SymbolTable sym_table;
 
 	struct
 	{
-		vector <string>* names;
-	    vector <Type>* types;
-	    string* targetCode;
+		vector<string>* names;
+	  vector<Type>* types;
+	  string* targetCode;
 	} exprList;
 
 	struct
@@ -179,7 +179,7 @@ declaration: declaration ';' identifier_list ':' type
 							}
 							else {	// 生成目标代码
 								int array_range = $5.array_top - $5.array_bottom  + 1;
-								stringstream ss; 
+								stringstream ss;
 								string target;
 								ss << array_range;
 								ss >> target;
@@ -231,7 +231,7 @@ declaration: declaration ';' identifier_list ':' type
 							}
 							else {	// 生成目标代码
 								int array_range = $3.array_top - $3.array_bottom  + 1;
-								stringstream ss; 
+								stringstream ss;
 								string target;
 								ss << array_range;
 								ss >> target;
@@ -241,7 +241,7 @@ declaration: declaration ';' identifier_list ':' type
 									tmp_target += " " + (*($1.names))[i] + "[" + target + "];\n";
 							}
 						}
-						$$ = new string(tmp_target);	
+						$$ = new string(tmp_target);
 					}
 				};
 
@@ -430,7 +430,7 @@ statement: variable ASSIGNOP expression
 					else
 						lhs_type = $1.type->type;
 					rhs_type = $3.type->type;
-					
+
 					if (lhs_type != rhs_type)
 					{
 						yyerror("赋值语句两边的类型不相等");
@@ -538,29 +538,111 @@ statement: variable ASSIGNOP expression
 
 variable: ID
 				{
-
+          Symbol* symbol = sym_table.getSymbol(*($1));
+          if (symbol == nullptr) {
+            yyerror("id not defined!");
+            yyerrok();
+          } else if (symbol->type.isCallable()) {
+            if (*($1) == sym_table.getParentSymbol()->name) {
+              if (symbol->type.ret_type == BasicType::VOID) {
+                yyerror("could not return");
+                yyerrok();
+              } else {
+                $$.type = new Type(symbol->type);
+              }
+            } else {
+                yyerror("return id wrong");
+                yyerrok();
+            }
+          } else if (symbol->type.isArray()) {
+            yyerror("can not assign array");
+            yyerrok();
+          }
+          else {
+            $$.type = new Type(symbol->type);
+            $$.targetCode = new string(*($1));
+          }
 				}
 				| ID '[' expression ']'
 				{
-
+          Symbol* symbol = sym_table.getSymbol(*($1));
+          if (symbol == nullptr) {
+            yyerror("id not defined");
+            yyerrok();
+          } else if (!symbol->type.isArray()) {
+            yyerror("id must be an array");
+            yyerrok();
+          } else {
+            if ($3.type->type != BasicType::INTEGER) {
+              yyerror("引用必须是整数");
+              yyerrok();
+            } else {
+              $$.type = new Type(symbol->type);
+              $$.targetCode = new string(*($1) + "[" +  *($3.targetCode) + "]");
+            }
+          }
 				};
 
 procedure_call_statement: ID
 				{
-
+          Symbol* symbol = sym_table.getSymbol(*($1));
+          if (symbol == nullptr) {
+            yyerror("id not defined");
+            yyerrok();
+          } else {
+            if (symbol->type.isCallable()) {
+              $$ = new string(*($1) + "();\n");
+            } else {
+              $$ = new string(*($1) + ";\n");
+            }
+          }
 				}
 				| ID '(' expr_list ')'
 				{
-
+          Symbol* symbol = sym_table.getSymbol(*($1));
+          if (symbol == nullptr) {
+            yyerror("id not defined");
+            yyerrok();
+          } else {
+            if (!symbol->type.isCallable()) {
+              yyerror("id is not callable");
+              yyerrok();
+            } else {
+              if (symbol->type.dimension != $3.names->size()) {
+                yyerror("参数个数不匹配");
+                yyerrok();
+              } else {
+                for (int i = 0; i < $3.types->size(); i++) {
+                  if ((*($3.types))[i] != symbol->args[i]) {
+                    yyerror(string("第") + string(i) + "个参数类型不匹配");
+                    yyerrok();
+                  }
+                }
+                $$ = new string(*($1) + "(" + *($3.targetCode) + ");\n");
+              }
+            }
+          }
 				};
 
 expr_list: expr_list ',' expression
 				{
-
+          $$.names = new vector<string>();
+          $$.types = new vector<Type>();
+          for (int i = 0; i < $1.names->size(); i++) {
+            $$.names->push_back((*($1.names))[i]);
+            $$.types->push_back((*($1.types))[i]);
+          }
+          $$.names->push_back(string($3.targetCode->data()));
+          $$.types->push_back($3.type);
+          $$.targetCode = new string(*($1.targetCode) + ", " + *($3.targetCode));
 				}
 				| expression
 				{
-
+          $$.names = new vector<string>();
+          $$.types = new vector<Type>();
+          $$.names->push_back(string($1.targetCode->data()));
+          $$.types->push_back($1.type);
+          $$.targetCode = new string(*($1.targetCode));
 				};
 
 expression: simple_expr RELOP simple_expr
