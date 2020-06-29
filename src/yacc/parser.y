@@ -19,25 +19,25 @@ SymbolTable sym_table;
 
 %union
 {
-	string targetCode;
+	string* targetCode;
 
 	struct
 	{
 		double num;
 		Type type;
-	  string targetCode;
+	  string* targetCode;
 	} targetDigitCode;
 
 	struct
 	{
-		vector <string> names;
+		vector <string>* names;
 	} idList;
 
 	struct
 	{
-		vector <string> names;
-	  vector <Type> types;
-	  string targetCode;
+		vector <string>* names;
+	  vector <Type>* types;
+	  string* targetCode;
 	} exprList;
 
 	struct
@@ -45,19 +45,19 @@ SymbolTable sym_table;
 		Type type;
 		int arrayTop;
 		int arrayBottom;
-		string targetCode;
+		string* targetCode;
 	} typeStruct;
 
 	struct
 	{
-		vector <Type> paraType;
-		string targetCode;
+		vector <Type>* paraType;
+		string* targetCode;
 	} parameterStruct;
 
 	struct
 	{
 		Type type;
-		string targetCode;
+		string* targetCode;
 	}expStruct;
 
 }
@@ -93,7 +93,7 @@ program : program_head program_body '.'
 				{
 
 				}
-                | program_head program_body error
+        | program_head program_body error
 				{
 
 				};
