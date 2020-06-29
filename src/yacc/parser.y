@@ -12,7 +12,6 @@
 
 #include "../symbol_table/symbol_table.h"
 
-#define struct Type* Typeptr;
 
 using namespace std;
 using namespace PascalSToCPP;
@@ -28,7 +27,7 @@ SymbolTable sym_table;
 	struct
 	{
 		double num;
-		Typeptr type;
+		Type *type;
 	    string* targetCode;
 	} targetDigitCode;
 
@@ -46,7 +45,7 @@ SymbolTable sym_table;
 
 	struct
 	{
-		Typeptr type;
+		Type *type;
 		int arrayTop;
 		int arrayBottom;
 		string *targetCode;
@@ -60,7 +59,7 @@ SymbolTable sym_table;
 
 	struct
 	{
-		Typeptr type;
+		Type *type;
 		string* targetCode;
 	}expStruct;
 }
