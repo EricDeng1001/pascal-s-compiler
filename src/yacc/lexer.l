@@ -60,8 +60,8 @@ false                             {yylval.targetCode = new string(yytext); Type 
 
 {id}                              {yylval.targetCode = new string(yytext);  Type return ID;}
 
-{digits}                          {yylval.targetDigitCode.targetCode = new string(yytext);yylval.targetDigitCode.num = atof(yytext);yylval.targetDigitCode.dataType = INT_T; Type return NUM;}
-{num}                             {yylval.targetDigitCode.targetCode = new string(yytext);yylval.targetDigitCode.num = atof(yytext);yylval.targetDigitCode.dataType = REAL_T;Type return NUM;}
+{digits}                          {yylval.targetDigitCode.targetCode = new string(yytext);yylval.targetDigitCode.isReal = 0; Type return NUM;}
+{num}                             {yylval.targetDigitCode.targetCode = new string(yytext);yylval.targetDigitCode.isReal = 1; Type return NUM;}
 
 {annotation}                      {}
 {white_space}                     {}

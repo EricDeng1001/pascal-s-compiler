@@ -25,8 +25,7 @@ SymbolTable sym_table;
 
 	struct
 	{
-		double num;
-		Type *type;
+		int isReal;
 	    string* targetCode;
 	} targetDigitCode;
 
@@ -64,7 +63,7 @@ SymbolTable sym_table;
 }
 
 %token <targetCode> PROGRAM VAR ARRAY OF RECORD INTEGER REAL BOOLEAN FUNCTION PROCEDURE  DO
-					BEGIN IF THEN END NOT WHILE READ WRITE ELSE TRUE FALSE INPUT OUTPUT
+					BEGIN IF THEN END NOT WHILE READ WRITE ELSE TRUE FALSE INPUT OUTPUT CONSTANT
 
 %token <targetCode> RELOP ADDOP MULOP ASSIGNOP
 
@@ -72,9 +71,10 @@ SymbolTable sym_table;
 
 %token <targetDigitCode> NUM
 
-%type <targetCode>  program program_head subprogram_head program_body declarations declaration
+%type <targetCode>  program program_head subprogram_head program_body declarations 
 					subprogram_declarations subprogram_declaration statement compound_statement
-					optional_statements procedure_call_statement statement_list sign
+					optional_statements procedure_call_statement statement_list sign 
+					var_declarations var_declaration const_declarations const_declaration
 
 %type <idList> identifier_list
 
@@ -130,7 +130,12 @@ program_body: declarations subprogram_declarations compound_statement
 					$$ = new string(tmp_target);
 				};
 
-declarations: VAR declaration ';'
+declarations: var_declarations const_declarations
+				{
+					$$ = new string(*($1) + *($2));
+				};
+
+var_declarations: VAR var_declaration ';'
 				{
 					$$ = $2;
 				}
@@ -139,14 +144,14 @@ declarations: VAR declaration ';'
 					$$ = new string("");
 				};
 
-declaration: declaration ';' identifier_list ':' type
+var_declaration: var_declaration ';' identifier_list ':' type
 				{
 					//使用dimension来判断是否为数组
 					if(($5.type)->dimension == 0) {
 						string tmp_target = $5->targetCode;
 						for(int i = 0; i < ($3.names)->size(); i++) {
 
-							Symbol sym((*($3.names))[i], $5->type, yylineno);
+							Symbol sym((*($3.names))[i], *($5.type), yylineno);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
@@ -165,7 +170,7 @@ declaration: declaration ';' identifier_list ':' type
 					{
 						string tmp_target = $5->targetCode;
 						for(int i = 0; i < ($3.names)->size(); i++) {
-							Symbol sym((*($3.names))[i], $5->type, yylineno);
+							Symbol sym((*($3.names))[i], *($5.type), yylineno);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
@@ -189,7 +194,7 @@ declaration: declaration ';' identifier_list ':' type
 					if(($3.type)->dimension == 0) {
 						string tmp_target = string(($3.targetCode)->data());
 						for(int i = 0; i < ($1.names)->size(); i++) {
-							Symbol sym((*($1.names))[i], $3->type, yylineno);
+							Symbol sym((*($1.names))[i], *($3.type), yylineno);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
@@ -208,7 +213,7 @@ declaration: declaration ';' identifier_list ':' type
 					{
 						string tmp_target = string(($3.targetCode)->data());
 						for(int i = 0; i < ($1.names)->size(); i++) {
-							Symbol sym((*($1.names))[i], $3->type, yylineno);
+							Symbol sym((*($1.names))[i], *($3.type), yylineno);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
@@ -226,6 +231,33 @@ declaration: declaration ';' identifier_list ':' type
 						$$ = new string(tmp_target);
 					}
 				};
+
+const_declarations: CONST const_declaration ';'
+				{
+					$$ = $2;
+				}
+				|
+				{
+					$$ = new string("");
+				};
+
+const_declaration: const_declaration ';' ID '=' NUM
+				{
+					string tmp_target = *($1);
+				}
+				|	const_declaration ';' ID '=' CONSTANT
+				{
+
+				}
+				|	ID '=' NUM
+				{
+
+				}
+				|	ID '=' CONSTANT
+				{
+
+				}
+
 type: standard_type
 				{
 					$$.type = $1.type;
@@ -294,7 +326,8 @@ subprogram_head: FUNCTION ID arguments ':' standard_type ';'
 					// 检查函数名是否重复
 					if (sym_table.isInScope(*($2)))
 					{
-						// TODO 错误处理, ID重复定义
+						yyerror("重复的标识符 " + *($2));
+						yyerrok;
 					}
 
 					SymbolBuilder func_builder = Symbol.getSymbolBuilder();
@@ -330,7 +363,8 @@ subprogram_head: FUNCTION ID arguments ':' standard_type ';'
 						{
 							if (sym_table.isInScope() || name == func_symbol.name)
 							{
-								// TODO 错误处理, 名字重复或者与函数名称相同
+								yyerror("重复的标识符 " + name);
+								yyerrok;
 							}
 							auto temp_builder = params_builder;
 							temp_builder.addName(name);
@@ -343,7 +377,8 @@ subprogram_head: FUNCTION ID arguments ':' standard_type ';'
 				}
 				| FUNCTION ID arguments error
 				{
-					// TODO 错误信息输出
+					yyerror("函数 " + *($2) + " 没有返回值");
+					yyerrok;
 					string temp_code = string("void ") + *($2) + *($3.targetCode);
 					$$ = new string(temp_code);
 				}
@@ -352,7 +387,8 @@ subprogram_head: FUNCTION ID arguments ':' standard_type ';'
 					// 检查函数名是否重复
 					if (sym_table.isInScope(*($2)))
 					{
-						// TODO 错误处理, ID重复定义
+						yyerror("重复的标识符 " + *($2));
+						yyerrok;
 					}
 
 					SymbolBuilder func_builder = Symbol.getSymbolBuilder();
@@ -387,7 +423,8 @@ subprogram_head: FUNCTION ID arguments ':' standard_type ';'
 						{
 							if (sym_table.isInScope() || name == func_symbol.name)
 							{
-								// TODO 错误处理, 名字重复或者与函数名称相同
+								yyerror("重复的标识符 " + name);
+								yyerrok;
 							}
 							auto temp_builder = params_builder;
 							temp_builder.addName(name);
@@ -400,7 +437,8 @@ subprogram_head: FUNCTION ID arguments ':' standard_type ';'
 				}
 				| PROCEDURE ID arguments error ';'
 				{
-					// TODO 错误信息输出
+					yyerror("过程 " + *($2) + " 不能有返回值");
+					yyerrok;
 					string temp_code = string("void ") + *($2) + *($3.targetCode);
 					$$ = new string(temp_code);
 				};
@@ -535,6 +573,12 @@ statement: variable ASSIGNOP expression
 						yyerrok;
 					}
 
+					if (lhs_type.isArray())
+					{
+						yyerror("赋值语句不直接应用于数组");
+						yyerrok;
+					}
+
 					string temp_code;
 					if (is_return)
 					{
@@ -625,7 +669,6 @@ statement: variable ASSIGNOP expression
 						{
 							yyerror("write 中的表达式的值不能为空");
 							yyerrok;
-							// TODO 错误处理, 表达式不能为空
 						}
 					}
 
@@ -636,306 +679,335 @@ statement: variable ASSIGNOP expression
 
 variable: ID
 				{
-          Symbol* symbol = sym_table.getSymbol(*($1));
-          if (symbol == nullptr) {
-            yyerror("id not defined!");
-            yyerrok;
-          } else if (symbol->type.isCallable()) {
-            if (*($1) == sym_table.getParentSymbol()->name) {
-              if (symbol->type.ret_type == BasicType::VOID) {
-                yyerror("could not return");
-                yyerrok;
-              } else {
-                $$.type = new Type(symbol->type);
-              }
-            } else {
-                yyerror("return id wrong");
-                yyerrok;
-            }
-          } else if (symbol->type.isArray()) {
-            yyerror("can not assign array");
-            yyerrok;
-          }
-          else {
-            $$.type = new Type(symbol->type);
-            $$.targetCode = new string(*($1));
-          }
+          			Symbol* symbol = sym_table.getSymbol(*($1));
+          			if (symbol == nullptr) {
+          			  yyerror("id not defined!");
+          			  yyerrok;
+          			} else if (symbol->type.isCallable()) {
+          			  if (*($1) == sym_table.getParentSymbol()->name) {
+          			    if (symbol->type.ret_type == BasicType::VOID) {
+          			      yyerror("could not return");
+          			      yyerrok;
+          			    } else {
+          			      $$.type = new Type(symbol->type);
+          			    }
+          			  } else {
+          			      yyerror("return id wrong");
+          			      yyerrok;
+          			  }
+          			} else if (symbol->type.isArray()) {
+          			  yyerror("can not assign array");
+          			  yyerrok;
+          			}
+          			else {
+          			  $$.type = new Type(symbol->type);
+          			  $$.targetCode = new string(*($1));
+          			}
 				}
 				| ID '[' expression ']'
 				{
-          Symbol* symbol = sym_table.getSymbol(*($1));
-          if (symbol == nullptr) {
-            yyerror("id not defined");
-            yyerrok;
-          } else if (!symbol->type.isArray()) {
-            yyerror("id must be an array");
-            yyerrok;
-          } else {
-            if ($3.type->type != BasicType::INTEGER) {
-              yyerror("引用必须是整数");
-              yyerrok;
-            } else {
-              $$.type = new Type(symbol->type);
-              $$.targetCode = new string(*($1) + "[" +  *($3.targetCode) + "]");
-            }
-          }
+          			Symbol* symbol = sym_table.getSymbol(*($1));
+          			if (symbol == nullptr) {
+          			  yyerror("id not defined");
+          			  yyerrok;
+          			} else if (!symbol->type.isArray()) {
+          			  yyerror("id must be an array");
+          			  yyerrok;
+          			} else {
+          			  if ($3.type->type != BasicType::INTEGER) {
+          			    yyerror("引用必须是整数");
+          			    yyerrok;
+          			  } else {
+          			    $$.type = new Type(symbol->type);
+          			    $$.targetCode = new string(*($1) + "[" +  *($3.targetCode) + "]");
+          			  }
+          			}
 				};
 
 procedure_call_statement: ID
 				{
-          Symbol* symbol = sym_table.getSymbol(*($1));
-          if (symbol == nullptr) {
-            yyerror("id not defined");
-            yyerrok;
-          } else {
-            if (symbol->type.isCallable()) {
-              $$ = new string(*($1) + "();\n");
-            } else {
-              yyerror("id is not callable");
-              yyerrok;
-            }
-          }
+          			Symbol* symbol = sym_table.getSymbol(*($1));
+          			if (symbol == nullptr) {
+          			  yyerror("id not defined");
+          			  yyerrok;
+          			} else {
+          			  if (symbol->type.isCallable()) {
+          			    $$ = new string(*($1) + "();\n");
+          			  } else {
+          			    yyerror("id is not callable");
+          			    yyerrok;
+          			  }
+          			}
 				}
 				| ID '(' expr_list ')'
 				{
-          Symbol* symbol = sym_table.getSymbol(*($1));
-          if (symbol == nullptr) {
-            yyerror("id not defined");
-            yyerrok;
-          } else {
-            if (!symbol->type.isCallable()) {
-              yyerror("id is not callable");
-              yyerrok;
-            } else {
-              if (symbol->type.dimension != $3.names->size()) {
-                yyerror("参数个数不匹配");
-                yyerrok;
-              } else {
-                for (int i = 0; i < $3.types->size(); i++) {
-                  if ((*($3.types))[i] != symbol->args[i]) {
-                    yyerror(string("第") + string(i) + "个参数类型不匹配");
-                    yyerrok;
-                  }
-                }
-                $$ = new string(*($1) + "(" + *($3.targetCode) + ");\n");
-              }
-            }
-          }
+          			Symbol* symbol = sym_table.getSymbol(*($1));
+          			if (symbol == nullptr) {
+          			  yyerror("id not defined");
+          			  yyerrok;
+          			} else {
+          			  if (!symbol->type.isCallable()) {
+          			    yyerror("id is not callable");
+          			    yyerrok;
+          			  } else {
+          			    if (symbol->type.dimension != $3.names->size()) {
+          			      yyerror("参数个数不匹配");
+          			      yyerrok;
+          			    } else {
+          			      for (int i = 0; i < $3.types->size(); i++) {
+          			        if ((*($3.types))[i] != symbol->args[i]) {
+          			          yyerror(string("第") + string(i) + "个参数类型不匹配");
+          			          yyerrok;
+          			        }
+          			      }
+          			      $$ = new string(*($1) + "(" + *($3.targetCode) + ");\n");
+          			    }
+          			  }
+          			}
 				};
 
 expr_list: expr_list ',' expression
 				{
-          $$.names = new vector<string>();
-          $$.types = new vector<Type>();
-          for (int i = 0; i < $1.names->size(); i++) {
-            $$.names->push_back((*($1.names))[i]);
-            $$.types->push_back((*($1.types))[i]);
-          }
-          $$.names->push_back(string($3.targetCode->data()));
-          $$.types->push_back($3.type);
-          $$.targetCode = new string(*($1.targetCode) + ", " + *($3.targetCode));
+          			$$.names = new vector<string>();
+          			$$.types = new vector<Type>();
+          			for (int i = 0; i < $1.names->size(); i++) {
+          			  $$.names->push_back((*($1.names))[i]);
+          			  $$.types->push_back((*($1.types))[i]);
+          			}
+          			$$.names->push_back(string($3.targetCode->data()));
+          			$$.types->push_back($3.type);
+          			$$.targetCode = new string(*($1.targetCode) + ", " + *($3.targetCode));
 				}
 				| expression
 				{
-          $$.names = new vector<string>();
-          $$.types = new vector<Type>();
-          $$.names->push_back(string($1.targetCode->data()));
-          $$.types->push_back($1.type);
-          $$.targetCode = new string(*($1.targetCode));
+          			$$.names = new vector<string>();
+          			$$.types = new vector<Type>();
+          			$$.names->push_back(string($1.targetCode->data()));
+          			$$.types->push_back($1.type);
+          			$$.targetCode = new string(*($1.targetCode));
 				};
 
 expression: simple_expr RELOP simple_expr
 				{
-          string relop;
-          if (!($1.type->isCallable()) && !($1.type->isArray())
-          && !($3.type->isCallable()) && !($3.type->isArray())) {
-            if (*($2) == "<>") {
-              relop = "!=";
-            } else if (*($2) == "=") {
-              relop = "==";
-            } else {
-              relop = string(*($2));
-            }
-            $$.type = new Type();
-            $$.type->type = BasicType::BOOLEAN;
-            $$.targetCode = new string(*($1.targetCode) + relop + *($3.targetCode));
-          } else {
-            yyerror("关系表达式，类型不正确");
-            yyerrok;
-          }
+          			string relop;
+          			if (!($1.type->isCallable()) && !($1.type->isArray())
+          			&& !($3.type->isCallable()) && !($3.type->isArray())) {
+          			  if (*($2) == "<>") {
+          			    relop = "!=";
+          			  } else if (*($2) == "=") {
+          			    relop = "==";
+          			  } else {
+          			    relop = string(*($2));
+          			  }
+          			  $$.type = new Type();
+          			  $$.type->type = BasicType::BOOLEAN;
+          			  $$.targetCode = new string(*($1.targetCode) + relop + *($3.targetCode));
+          			} else {
+          			  yyerror("关系表达式，类型不正确");
+          			  yyerrok;
+          			}
 				}
 				| simple_expr
 				{
-          $$.type = new Type($1.type);
-          $$.targetCode = new string(*($1));
+          			$$.type = new Type($1.type);
+          			$$.targetCode = new string(*($1));
 				};
 
 simple_expr: simple_expr ADDOP term
 				{
-          if ($1.type->isCallable() || $1.type->isArray()
-          || $3.type->isCallable() || $3.type->isArray()) {
-            yyerror("运算类型不正确");
-            yyerrok;
-          } else {
-            if (*($2) == "or") {
-              if ($1.type->type != BasicType::BOOLEAN || $3.type->type != BasicType::BOOLEAN) {
-                yyerror("运算类型不正确");
-                yyerrok;
-              } else {
-                $$.targetCode = new string(*($1.targetCode) + "||" + *($3.targetCode));
-                $$.type = new Type();
-                $$.type->type = BasicType::BOOLEAN;
-              }
-            } else {
-              if (($1.type == BasicType::INTEGER || $1.type == BasicType::REAL)
-              && ($3.type == BasicType::INTEGER || $3.type == BasicType::REAL)) {
-                 $$.type = new Type();
-                if ($1.type == BasicType::REAL || $3.type == BasicType::REAL) {
-                  $$.type->type = BasicType::REAL;
-                } else {
-                  $$.type->type = BasicType::INTEGER;
-                }
-                $$.targetCode = new string(*($1.targetCode) + *($2) + *($3.targetCode));
-              } else {
-                yyerror("运算类型不正确");
-                yyerrok;
-              }
-            }
-          }
+          			if ($1.type->isCallable() || $1.type->isArray()
+          			|| $3.type->isCallable() || $3.type->isArray()) {
+          			  yyerror("运算类型不正确");
+          			  yyerrok;
+          			} else {
+          			  if (*($2) == "or") {
+          			    if ($1.type->type != BasicType::BOOLEAN || $3.type->type != BasicType::BOOLEAN) {
+          			      yyerror("运算类型不正确");
+          			      yyerrok;
+          			    } else {
+          			      $$.targetCode = new string(*($1.targetCode) + "||" + *($3.targetCode));
+          			      $$.type = new Type();
+          			      $$.type->type = BasicType::BOOLEAN;
+          			    }
+          			  } else {
+          			    if (($1.type == BasicType::INTEGER || $1.type == BasicType::REAL)
+          			    && ($3.type == BasicType::INTEGER || $3.type == BasicType::REAL)) {
+          			       $$.type = new Type();
+          			      if ($1.type == BasicType::REAL || $3.type == BasicType::REAL) {
+          			        $$.type->type = BasicType::REAL;
+          			      } else {
+          			        $$.type->type = BasicType::INTEGER;
+          			      }
+          			      $$.targetCode = new string(*($1.targetCode) + *($2) + *($3.targetCode));
+          			    } else {
+          			      yyerror("运算类型不正确");
+          			      yyerrok;
+          			    }
+          			  }
+          			}
 				}
 				| term
 				{
-          $$.type = new Type($1.type);
-          $$.targetCode = new string(*($1.targetCode));
+          			$$.type = new Type($1.type);
+          			$$.targetCode = new string(*($1.targetCode));
 				}
 				| sign term
 				{
-          $$.type = new Type($2.type);
-          $$.targetCode = new string(*($1) + *($2.targetCode));
+         			$$.type = new Type($2.type);
+         			$$.targetCode = new string(*($1) + *($2.targetCode));
 				};
 
 term: term MULOP factor
 				{
-          if ($1.type->isCallable() || $1.type->isArray()
-          || $3.type->isCallable() || $3.type->isArray()) {
-            yyerror("运算类型不正确");
-            yyerrok;
-          } else {
-            if (*($2) == "and") {
-              if ($1.type->type != BasicType::BOOLEAN || $3.type->type != BasicType::BOOLEAN) {
-                yyerror("运算类型不正确");
-                yyerrok;
-              } else {
-                $$.targetCode = new string(*($1.targetCode) + "&&" + *($3.targetCode));
-                $$.type = new Type();
-                $$.type->type = BasicType::BOOLEAN;
-              }
-            } else if (*($2) == "div") {
-              if ($1.type->type != BasicType::INTEGER || $3.type->type != BasicType::INTEGER) {
-                yyerror("运算类型不正确");
-                yyerrok;
-              } else {
-                $$.targetCode = new string(*($1.targetCode) + " / " + *($3.targetCode));
-                $$.type = new Type();
-                $$.type->type = BasicType.INTEGER;
-              }
-            } else if ( *($2) == "mod") {
-              if ($1.type->type != BasicType::INTEGER || $3.type->type != BasicType::INTEGER) {
-                yyerror("运算类型不正确");
-                yyerrok;
-              } else {
-                $$.targetCode = new string(*($1.targetCode) + " % " + *($3.targetCode));
-                $$.type = new Type();
-                $$.type->type = BasicType.INTEGER;
-              }
-            } else {
-              if (($1.type == BasicType::INTEGER || $1.type == BasicType::REAL)
-              && ($3.type == BasicType::INTEGER || $3.type == BasicType::REAL)) {
-                 $$.type = new Type();
-                if ($1.type == BasicType::REAL || $3.type == BasicType::REAL) {
-                  $$.type->type = BasicType::REAL;
-                } else {
-                  $$.type->type = BasicType::INTEGER;
-                }
-                $$.targetCode = new string(*($1.targetCode) + *($2) + *($3.targetCode));
-              } else {
-                yyerror("运算类型不正确");
-                yyerrok;
-              }
-            }
-          }
+          			if ($1.type->isCallable() || $1.type->isArray() ||
+					    $3.type->isCallable() || $3.type->isArray()) {
+          			  	yyerror("运算类型不正确");
+          			  	yyerrok;
+          			} else {
+          			  	if (*($2) == "and") {
+          			  	  if ($1.type->type != BasicType::BOOLEAN || $3.type->type != BasicType::BOOLEAN) {
+          			  	    yyerror("运算类型不正确");
+          			  	    yyerrok;
+          			  	  } else {
+          			  	    $$.targetCode = new string(*($1.targetCode) + "&&" + *($3.targetCode));
+          			  	    $$.type = new Type();
+          			  	    $$.type->type = BasicType::BOOLEAN;
+          			  	  }
+          			  	} else if (*($2) == "div") {
+          			  	  if ($1.type->type != BasicType::INTEGER || $3.type->type != BasicType::INTEGER) {
+          			  	    yyerror("运算类型不正确");
+          			  	    yyerrok;
+          			  	  } else {
+          			  	    $$.targetCode = new string(*($1.targetCode) + " / " + *($3.targetCode));
+          			  	    $$.type = new Type();
+          			  	    $$.type->type = BasicType.INTEGER;
+          			  	  }
+          			  	} else if ( *($2) == "mod") {
+          			  	  if ($1.type->type != BasicType::INTEGER || $3.type->type != BasicType::INTEGER) {
+          			  	    yyerror("运算类型不正确");
+          			  	    yyerrok;
+          			  	  } else {
+          			  	    $$.targetCode = new string(*($1.targetCode) + " % " + *($3.targetCode));
+          			  	    $$.type = new Type();
+          			  	    $$.type->type = BasicType.INTEGER;
+          			  	  }
+          			  } else {
+          			    	if (($1.type == BasicType::INTEGER || $1.type == BasicType::REAL)
+          			    	&& ($3.type == BasicType::INTEGER || $3.type == BasicType::REAL)) {
+          			    	   $$.type = new Type();
+          			    	  if ($1.type == BasicType::REAL || $3.type == BasicType::REAL) {
+          			    	    $$.type->type = BasicType::REAL;
+          			    	  } else {
+          			    	    $$.type->type = BasicType::INTEGER;
+          			    	  }
+          			    	  $$.targetCode = new string(*($1.targetCode) + *($2) + *($3.targetCode));
+          			    	} else {
+          			    	  yyerror("运算类型不正确");
+          			    	  yyerrok;
+          			    	}
+          			  }
+          			}
 				}
 				| factor
 				{
-          $$.type = new Type($1.type);
-          $$.targetCode = new string(*($1));
+          			$$.type = new Type($1.type);
+          			$$.targetCode = new string(*($1));
 				};
 
 factor: ID
 				{
-          Symbol* symbol = sym_table.getSymbol(*($1));
-          if (symbol == nullptr) {
-            yyerror("id not defined");
-            yyerrok;
-          } else {
-            if (symbol->type.isCallable()) {
-              if (symbol->ret_type == BasicType::VOID) {
-                yyerror("id不能是一个void类型的函数或过程");
-                yyerrok;
-              } else {
-                if (symbol->dimension != 0) {
-                  yyerror("函数不能无参调用");
-                  yyerrok;
-                } else {
-                  $$.type = new Type();
-                  $$.type->type = symbol->ret_type;
-                  $$.targetCode = *($1) + "()";
-                }
-              }
-            } else {
-              $$.type = new Type(symbol->type);
-              $$.targetCode = new string(*($1));
-            }
-          }
+          			Symbol* symbol = sym_table.getSymbol(*($1));
+          			if (symbol == nullptr) {
+          			  	yyerror("id not defined");
+          			  	yyerrok;
+          			} else {
+          			  	if (symbol->type.isCallable()) {
+          			  	  	if (symbol->ret_type == BasicType::VOID) {
+          			  	  	  	yyerror("id不能是一个void类型的函数或过程");
+          			  	  	  	yyerrok;
+          			  	  	} else {
+          			  	  	  	if (symbol->dimension != 0) {
+          			  	  	  	  	yyerror("函数不能无参调用");
+          			  	  	  	  	yyerrok;
+          			  	  	  	} else {
+          			  	  	  	  	$$.type = new Type();
+          			  	  	  	  	$$.type->type = symbol->ret_type;
+          			  	  	  	  	$$.targetCode = *($1) + "()";
+          			  	  	  	}
+          			  	  	}
+          			  	} else {
+          			  	  	$$.type = new Type(symbol->type);
+          			  	  	$$.targetCode = new string(*($1));
+          			  	}
+          			}
 				}
 				| ID '(' expr_list ')'
 				{
-          Symbol* symbol = sym_table.getSymbol(*($1));
-          if (symbol == nullptr) {
-            yyerror("id not defined");
-            yyerrok;
-          } else {
-            if (!symbol->type.isCallable()) {
-              yyerror("id必须是一个可以调用");
-              yyerrok;
-            } else {
-              if (symbol->ret_type == BasicType.VOID) {
-                yyerror("被调用的函数必须有返回值");
-                yyerrok;
-              } else {
-                if ($3.names->size() != symbol->dimension) {
-                  yyerror("被调用函数的参数个数不匹配");
-                  yyerrok;
-                } else {
-                  for (int i = 0; i < $3.types->size(); i++) {
-                    if ((*($3.types))[i] != symbol->args[i]) {
-                      yyerror(string("第") + string(i) + "个参数类型不匹配");
-                      yyerrok;
-                    }
-                  }
-                  $$ = new string(*($1) + "(" + *($3.targetCode) + ")");
-                }
-              }
-            }
-          }
+          			Symbol* symbol = sym_table.getSymbol(*($1));
+          			if (symbol == nullptr) {
+          			  yyerror("id not defined");
+          			  yyerrok;
+          			} else {
+          			  	if (!symbol->type.isCallable()) {
+          			  	  yyerror("id必须是一个可以调用");
+          			  	  yyerrok;
+          			  	} else {
+          			  	  	if (symbol->ret_type == BasicType.VOID) {
+          			  	  	  yyerror("被调用的函数必须有返回值");
+          			  	  	  yyerrok;
+          			  	  	} else {
+          			  	  	  	if ($3.names->size() != symbol->dimension) {
+          			  	  	  	  yyerror("被调用函数的参数个数不匹配");
+          			  	  	  	  yyerrok;
+          			  	  	  	} else {
+          			  	  	  	  	for (int i = 0; i < $3.types->size(); i++) {
+          			  	  	  	  	  	if ((*($3.types))[i] != symbol->args[i]) {
+          			  	  	  	  	  	  	yyerror(string("第") + string(i) + "个参数类型不匹配");
+          			  	  	  	  	  	  	yyerrok;
+          			  	  	  	  	  	}
+          			  	  	  	  	}
+          			  	  	  	  $$ = new string(*($1) + "(" + *($3.targetCode) + ")");
+          			  	  	  	}
+          			  	  	}
+          			  	}
+          			}
 				}
 				| ID '[' expression ']'
 				{
+					if ($3.type->type != BasicType::INTEGER)
+					{
+						yyerror("数组下标访问必须使用整数");
+						yyerrok;
+					}
 
+					if (!sym_table.isInScope(*($1)))
+					{
+						yyerror(*($1) + " 未定义");
+						yyerrok;
+					}
+					Symbol *const sym_ptr = sym_table.getSymbol(*($1))
+					if (sym_ptr && !sym_ptr->type.isArray())
+					{
+						yyerror(*($1) + "不是数组类型");
+						yyerrok;
+					}
+
+					int lb = sym_ptr->type.period[0].front;
+
+					$$.type = new Type();
+					$$.type->type = sym_ptr->type.type;
+					
+					string temp_code = *($1) + "[" + *($3.targetCode) + "-" + to_string(lb) + "]";
+					$$.targetCode = new string(temp_code);
 				}
 				| NUM
 				{
-
+					$$.type = new Type();
+					$$.targetCode = new string(*($1.targetCode));
+					if (isReal)
+						$$.type->type = BasicType::INTEGER;
+					else
+						$$.type->type = BasicType::REAL;
 				}
 				| '(' expression ')'
 				{
@@ -947,7 +1019,8 @@ factor: ID
 				{
 					if ($2.type->type != BasicType::BOOLEAN)
 					{
-						// TODO
+						yyerror("NOT 后面必须为布尔表达式");
+						yyerrok;
 					}
 					$$.type = new Type();
 					$$.targetCode = new string("!");
@@ -969,11 +1042,11 @@ factor: ID
 
 sign: '+'
 				{
-          $$ = new string("+");
+					$$ = new string("+");
 				}
 				| '-'
 				{
-          $$ = new string("-");
+					$$ = new string("-");
 				};
 
 %%
