@@ -25,8 +25,7 @@ SymbolTable sym_table;
 
 	struct
 	{
-		double num;
-		Type *type;
+		int isReal;
 	    string* targetCode;
 	} targetDigitCode;
 
@@ -294,7 +293,8 @@ subprogram_head: FUNCTION ID arguments ':' standard_type ';'
 					// 检查函数名是否重复
 					if (sym_table.isInScope(*($2)))
 					{
-						// TODO 错误处理, ID重复定义
+						yyerror("重复的标识符 " + *($2));
+						yyerrok;
 					}
 
 					SymbolBuilder func_builder = Symbol.getSymbolBuilder();
@@ -330,7 +330,8 @@ subprogram_head: FUNCTION ID arguments ':' standard_type ';'
 						{
 							if (sym_table.isInScope() || name == func_symbol.name)
 							{
-								// TODO 错误处理, 名字重复或者与函数名称相同
+								yyerror("重复的标识符 " + name);
+								yyerrok;
 							}
 							auto temp_builder = params_builder;
 							temp_builder.addName(name);
@@ -343,7 +344,8 @@ subprogram_head: FUNCTION ID arguments ':' standard_type ';'
 				}
 				| FUNCTION ID arguments error
 				{
-					// TODO 错误信息输出
+					yyerror("函数 " + *($2) + " 没有返回值");
+					yyerrok;
 					string temp_code = string("void ") + *($2) + *($3.targetCode);
 					$$ = new string(temp_code);
 				}
@@ -352,7 +354,8 @@ subprogram_head: FUNCTION ID arguments ':' standard_type ';'
 					// 检查函数名是否重复
 					if (sym_table.isInScope(*($2)))
 					{
-						// TODO 错误处理, ID重复定义
+						yyerror("重复的标识符 " + *($2));
+						yyerrok;
 					}
 
 					SymbolBuilder func_builder = Symbol.getSymbolBuilder();
@@ -387,7 +390,8 @@ subprogram_head: FUNCTION ID arguments ':' standard_type ';'
 						{
 							if (sym_table.isInScope() || name == func_symbol.name)
 							{
-								// TODO 错误处理, 名字重复或者与函数名称相同
+								yyerror("重复的标识符 " + name);
+								yyerrok;
 							}
 							auto temp_builder = params_builder;
 							temp_builder.addName(name);
@@ -400,7 +404,8 @@ subprogram_head: FUNCTION ID arguments ':' standard_type ';'
 				}
 				| PROCEDURE ID arguments error ';'
 				{
-					// TODO 错误信息输出
+					yyerror("过程 " + *($2) + " 不能有返回值");
+					yyerrok;
 					string temp_code = string("void ") + *($2) + *($3.targetCode);
 					$$ = new string(temp_code);
 				};
@@ -535,6 +540,12 @@ statement: variable ASSIGNOP expression
 						yyerrok;
 					}
 
+					if (lhs_type.isArray())
+					{
+						yyerror("赋值语句不直接应用于数组");
+						yyerrok;
+					}
+
 					string temp_code;
 					if (is_return)
 					{
@@ -625,7 +636,6 @@ statement: variable ASSIGNOP expression
 						{
 							yyerror("write 中的表达式的值不能为空");
 							yyerrok;
-							// TODO 错误处理, 表达式不能为空
 						}
 					}
 
@@ -885,7 +895,12 @@ factor: ID
 				}
 				| NUM
 				{
-
+					$$.type = new Type();
+					$$.targetCode = new string(*($1.targetCode));
+					if (isReal)
+						$$.type->type = BasicType::INTEGER;
+					else
+						$$.type->type = BasicType::REAL;
 				}
 				| '(' expression ')'
 				{
@@ -897,7 +912,8 @@ factor: ID
 				{
 					if ($2.type->type != BasicType::BOOLEAN)
 					{
-						// TODO 
+						yyerror("NOT 后面必须为布尔表达式");
+						yyerrok;
 					}
 					$$.type = new Type();
 					$$.targetCode = new string("!");
