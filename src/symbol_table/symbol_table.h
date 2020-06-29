@@ -15,6 +15,9 @@
 
 namespace PascalSToCPP
 {
+
+
+
     enum class BasicType
     {
         INTEGER = 0,
@@ -72,6 +75,11 @@ namespace PascalSToCPP
         // 当类型为可调用类型时
         std::deque<Type> args{};
         std::optional<BasicType> ret_type{std::nullopt}; // nullopt if procedure
+
+        bool isArray() const noexcept
+        {
+            return type != BasicType::CALLABLE && dimension > 0;
+        }
 
         // 当类型为可调用对象时, 判断是否有返回值
         bool hasRetVal() const noexcept
