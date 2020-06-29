@@ -126,6 +126,9 @@ namespace PascalSToCPP
         Type type{};
         std::size_t def_at{kHasNoDefAt};
 
+        // 判断类型是否为可调用对象
+        bool isCallable() const noexcept { return type.isCallable(); }
+
         // 判断该符号是否已定义但未使用
         bool isDefButNotUsed() const noexcept { return def_at != kHasNoDefAt && ref_at.empty(); }
         
