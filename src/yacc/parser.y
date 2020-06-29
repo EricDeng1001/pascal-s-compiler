@@ -14,7 +14,11 @@
 using namespace std;
 using namespace PascalSToCPP;
 
-SymbolTable sym_table;
+SymbolTable symbolTable;
+
+void debug(string data) {
+   cerr << "--debug-- " << data << endl;
+}
 %}
 
 %union
