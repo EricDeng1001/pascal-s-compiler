@@ -150,6 +150,7 @@ namespace PascalSToCPP
         SymbolBuilder &setConst(const bool is_constant) noexcept;
         SymbolBuilder &setRef(const bool is_ref) noexcept;
         SymbolBuilder &setDimension(const int dimension) noexcept;
+        SymbolBuilder &setType(const Type &type) noexcept { type_ = type; }
 
         SymbolBuilder &addPeriod(std::pair<int, int> period);
         // 下标从 1 开始

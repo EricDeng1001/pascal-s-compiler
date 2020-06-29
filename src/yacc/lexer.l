@@ -28,40 +28,40 @@ annotation        {block_annotation}|{line_annotation}
 %%
 
 
-program                           {yylval.targetCode = new string(yytext); Type return TOK_PROGRAM;}
-var								  {yylval.targetCode = new string(yytext); Type return TOK_VAR;}
-array                             {yylval.targetCode = new string(yytext); Type return TOK_ARRAY;}
-of                                {yylval.targetCode = new string(yytext); Type return TOK_OF;}
-record                            {yylval.targetCode = new string(yytext); Type return TOK_RECORD;}
-integer                           {yylval.targetCode = new string(yytext); Type return TOK_INTEGER;}
-real                              {yylval.targetCode = new string(yytext); Type return TOK_REAL;}
-boolean                           {yylval.targetCode = new string(yytext); Type return TOK_BOOLEAN;}
-function                          {yylval.targetCode = new string(yytext); Type return TOK_FUNCTION;}
-procedure                         {yylval.targetCode = new string(yytext); Type return TOK_PROCEDURE;}
-begin                             {yylval.targetCode = new string(yytext); Type return TOK_BEGIN;}
-end                               {yylval.targetCode = new string(yytext); Type return TOK_END;}
-if                                {yylval.targetCode = new string(yytext); Type return TOK_IF;}
-then                              {yylval.targetCode = new string(yytext); Type return TOK_THEN;}
-else                              {yylval.targetCode = new string(yytext); Type return TOK_ELSE;}
-while                             {yylval.targetCode = new string(yytext); Type return TOK_WHILE;}
-do                                {yylval.targetCode = new string(yytext); Type return TOK_DO;}
-read                              {yylval.targetCode = new string(yytext); Type return TOK_READ;}
-write                             {yylval.targetCode = new string(yytext); Type return TOK_WRITE;}
-not                               {yylval.targetCode = new string(yytext); Type return TOK_NOT;}
-true                              {yylval.targetCode = new string(yytext); Type return TOK_TRUE;}
-false                             {yylval.targetCode = new string(yytext); Type return TOK_FALSE;}
+program                           {yylval.targetCode = new string(yytext); return TOK_PROGRAM;}
+var								  {yylval.targetCode = new string(yytext); return TOK_VAR;}
+array                             {yylval.targetCode = new string(yytext); return TOK_ARRAY;}
+of                                {yylval.targetCode = new string(yytext); return TOK_OF;}
+record                            {yylval.targetCode = new string(yytext); return TOK_RECORD;}
+integer                           {yylval.targetCode = new string(yytext); return TOK_INTEGER;}
+real                              {yylval.targetCode = new string(yytext); return TOK_REAL;}
+boolean                           {yylval.targetCode = new string(yytext); return TOK_BOOLEAN;}
+function                          {yylval.targetCode = new string(yytext); return TOK_FUNCTION;}
+procedure                         {yylval.targetCode = new string(yytext); return TOK_PROCEDURE;}
+begin                             {yylval.targetCode = new string(yytext); return TOK_BEGIN;}
+end                               {yylval.targetCode = new string(yytext); return TOK_END;}
+if                                {yylval.targetCode = new string(yytext); return TOK_IF;}
+then                              {yylval.targetCode = new string(yytext); return TOK_THEN;}
+else                              {yylval.targetCode = new string(yytext); return TOK_ELSE;}
+while                             {yylval.targetCode = new string(yytext); return TOK_WHILE;}
+do                                {yylval.targetCode = new string(yytext); return TOK_DO;}
+read                              {yylval.targetCode = new string(yytext); return TOK_READ;}
+write                             {yylval.targetCode = new string(yytext); return TOK_WRITE;}
+not                               {yylval.targetCode = new string(yytext); return TOK_NOT;}
+true                              {yylval.targetCode = new string(yytext); return TOK_TRUE;}
+false                             {yylval.targetCode = new string(yytext); return TOK_FALSE;}
 
-("="|"<>"|"<"|"<="|">"|">=")      {yylval.targetCode = new string(yytext); Type return TOK_RELOP;}
-("+"|"-"|"or")                    {yylval.targetCode = new string(yytext); Type return TOK_ADDOP;}
-("*"|"/"|"div"|"mod"|"and")       {yylval.targetCode = new string(yytext); Type return TOK_MULOP;}
-":="                              {yylval.targetCode = new string(yytext); Type return TOK_ASSIGNOP;}
+("="|"<>"|"<"|"<="|">"|">=")      {yylval.targetCode = new string(yytext); return TOK_RELOP;}
+("+"|"-"|"or")                    {yylval.targetCode = new string(yytext); return TOK_ADDOP;}
+("*"|"/"|"div"|"mod"|"and")       {yylval.targetCode = new string(yytext); return TOK_MULOP;}
+":="                              {yylval.targetCode = new string(yytext); return TOK_ASSIGNOP;}
 
-("."|";"|","|":"|"["|"]"|"("|")") { yylval.targetCode = new string(yytext); Type return *yytext;}
+("."|";"|","|":"|"["|"]"|"("|")") { yylval.targetCode = new string(yytext); return *yytext;}
 
-{id}                              {yylval.targetCode = new string(yytext);  Type return TOK_ID;}
+{id}                              {yylval.targetCode = new string(yytext);  return TOK_ID;}
 
-{digits}                          {yylval.targetDigitCode.targetCode = new string(yytext);yylval.targetDigitCode.isReal = 0; Type return TOK_NUM;}
-{num}                             {yylval.targetDigitCode.targetCode = new string(yytext);yylval.targetDigitCode.isReal = 1; Type return TOK_NUM;}
+{digits}                          {yylval.targetDigitCode.targetCode = new string(yytext);yylval.targetDigitCode.isReal = 0; return TOK_NUM;}
+{num}                             {yylval.targetDigitCode.targetCode = new string(yytext);yylval.targetDigitCode.isReal = 1; return TOK_NUM;}
 
 {annotation}                      {}
 {white_space}                     {}
