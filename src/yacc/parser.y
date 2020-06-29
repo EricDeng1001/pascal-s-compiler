@@ -21,26 +21,26 @@ SymbolTable sym_table;
 {
 	string* targetCode;
 
-	struct targetDigitCode
+	struct
 	{
 		double num;
 		Type type;
-	  string* targetCode;
+	    string* targetCode;
 	} targetDigitCode;
 
-	struct idList
+	struct
 	{
 		vector <string>* names;
 	} idList;
 
-	struct exprList
+	struct
 	{
 		vector <string>* names;
-	  vector <Type>* types;
-	  string* targetCode;
+	    vector <Type>* types;
+	    string* targetCode;
 	} exprList;
 
-	struct typeStruct
+	struct
 	{
 		Type type;
 		int arrayTop;
@@ -48,13 +48,13 @@ SymbolTable sym_table;
 		string* targetCode;
 	} typeStruct;
 
-	struct parameterStruct
+	struct
 	{
 		vector <Type>* paraType;
 		string* targetCode;
 	} parameterStruct;
 
-	struct expStruct
+	struct
 	{
 		Type type;
 		string* targetCode;
