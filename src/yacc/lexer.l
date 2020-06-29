@@ -29,7 +29,7 @@ annotation        {block_annotation}|{line_annotation}
 
 
 program                           {yylval.targetCode = new string(yytext); Type return PROGRAM;}
-var								                {yylval.targetCode = new string(yytext); Type return VAR;}
+var								  {yylval.targetCode = new string(yytext); Type return VAR;}
 array                             {yylval.targetCode = new string(yytext); Type return ARRAY;}
 of                                {yylval.targetCode = new string(yytext); Type return OF;}
 record                            {yylval.targetCode = new string(yytext); Type return RECORD;}

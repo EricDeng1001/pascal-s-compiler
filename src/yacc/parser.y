@@ -21,72 +21,69 @@ SymbolTable sym_table;
 {
 	string targetCode;
 
-	struct
+	struct targetDigitCode
 	{
-		double num;
-		Type type;
+	  double num;
+	  Type type;
 	  string targetCode;
-	} targetDigitCode;
+	};
 
-	struct
+	struct idList
 	{
-		vector <string> names;
-	} idList;
+		vector<string> names;
+	};
 
-	struct
+	struct exprList
 	{
-		vector <string> names;
+	  vector <string> names;
 	  vector <Type> types;
 	  string targetCode;
-	} exprList;
+	};
 
-	struct
+	struct typeStruct
 	{
 		Type type;
 		int arrayTop;
 		int arrayBottom;
 		string targetCode;
-	} typeStruct;
+	};
 
-	struct
+	struct parameterStruct
 	{
 		vector <Type> paraType;
 		string targetCode;
-	} parameterStruct;
+	};
 
-	struct
+	struct expStruct
 	{
 		Type type;
 		string targetCode;
-	}expStruct;
+	};
 
 }
 
-%token <targetCode> PROGRAM  VAR  ARRAY  OF  RECORD  INTEGER
-								 REAL  BOOLEAN  FUNCTION  PROCEDURE  DO
-								 BEGIN  IF  THEN  END  NOT  WHILE  READ
-								 WRITE  ELSE  TRUE  FALSE
+%token <targetCode> PROGRAM VAR ARRAY OF RECORD INTEGER REAL BOOLEAN FUNCTION PROCEDURE  DO
+					BEGIN IF THEN END NOT WHILE READ WRITE ELSE TRUE FALSE
 
-%token <targetCode> RELOP  ADDOP  MULOP  ASSIGNOP
+%token <targetCode> RELOP ADDOP MULOP ASSIGNOP
 
 %token <targetCode>	ID
 
 %token <targetDigitCode> NUM
 
-%type <targetCode>  program  program_head  subprogram_head   program_body declarations  declaration
-					subprogram_declarations  subprogram_declaration statement    compound_statement
-					optional_statements  procedure_call_statement statement_list  sign
+%type <targetCode>  program program_head subprogram_head program_body declarations declaration
+					subprogram_declarations subprogram_declaration statement compound_statement
+					optional_statements procedure_call_statement statement_list sign
 
 %type <idList> identifier_list
 
 %type <exprList> expr_list
 
-%type <typeStruct> type  standard_type
+%type <typeStruct> type standard_type
 
-%type <expStruct> variable expression  simple_expr  term factor
+%type <expStruct> variable expression simple_expr term factor
 
-%type <parameterStruct> parameter_list  parameter_lists  arguments
-
+%type <parameterStruct> parameter_list parameter_lists arguments
 %%
 
 program : program_head program_body '.'
