@@ -132,8 +132,7 @@ program_body: declarations subprogram_declarations compound_statement
 
 declarations: VAR declaration ';'
 				{
-					string tmp_target = string($2->data());
-					$$ = new string(tmp_target);
+					$$ = $2;
 				}
 				|
 				{
@@ -144,12 +143,10 @@ declaration: declaration ';' identifier_list ':' type
 				{
 					//使用dimension来判断是否为数组
 					if(($5.type)->dimension == 0) {
-						string tmp_target = string(($5.targetCode)->data());
+						string tmp_target = $5->targetCode;
 						for(int i = 0; i < ($3.names)->size(); i++) {
 
-							Symbol sym;
-							sym.type = $5->type;
-							sym.name = (*($3.names))[i];
+							Symbol sym((*($3.names))[i], $5->type, yylineno);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
@@ -163,14 +160,12 @@ declaration: declaration ';' identifier_list ':' type
 									tmp_target += " " + (*($3.names))[i] + ";\n";
 							}
 						}
-						$$ = new string(string(($1)->data()) + tmp_target);
+						$$ = new string(*$1 + tmp_target);
 					}else if(($5.type)->dimension > 0)
 					{
-						string tmp_target = string(($5.targetCode)->data());
+						string tmp_target = $5->targetCode;
 						for(int i = 0; i < ($3.names)->size(); i++) {
-							Symbol sym;
-							sym.type = $5->type;
-							sym.name = (*($3.names))[i];
+							Symbol sym((*($3.names))[i], $5->type, yylineno);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
@@ -178,18 +173,14 @@ declaration: declaration ';' identifier_list ':' type
 								parser.yyerrok;
 							}
 							else {	// 生成目标代码
-								int array_range = $5.array_top - $5.array_bottom  + 1;
-								stringstream ss;
-								string target;
-								ss << array_range;
-								ss >> target;
-								if(i != ($3.idNameList)->size() - 1)
+								string target = to_string($5.array_top - $5.array_bottom  + 1);
+								if(i != ($3.names)->size() - 1)
 									tmp_target += " " + (*($3.names))[i] + "[" + target + "],";
 								else
 									tmp_target += " " + (*($3.names))[i] + "[" + target + "];\n";
 							}
 						}
-						$$ = new string(string(($1)->data()) + tmp_target);
+						$$ = new string(*$1 + tmp_target);
 					}
 				}
 				| identifier_list ':' type
@@ -198,10 +189,7 @@ declaration: declaration ';' identifier_list ':' type
 					if(($3.type)->dimension == 0) {
 						string tmp_target = string(($3.targetCode)->data());
 						for(int i = 0; i < ($1.names)->size(); i++) {
-
-							struct Symbol sym;
-							sym.type = $3->type;
-							sym.name = (*($1.names))[i];
+							Symbol sym((*($1.names))[i], $3->type, yylineno);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
@@ -220,9 +208,7 @@ declaration: declaration ';' identifier_list ':' type
 					{
 						string tmp_target = string(($3.targetCode)->data());
 						for(int i = 0; i < ($1.names)->size(); i++) {
-							struct Symbol sym;
-							sym.type = $3->type;
-							sym.name = (*($1.names))[i];
+							Symbol sym((*($1.names))[i], $3->type, yylineno);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
@@ -230,12 +216,8 @@ declaration: declaration ';' identifier_list ':' type
 								parser.yyerrok;
 							}
 							else {	// 生成目标代码
-								int array_range = $3.array_top - $3.array_bottom  + 1;
-								stringstream ss;
-								string target;
-								ss << array_range;
-								ss >> target;
-								if(i != ($1.idNameList)->size() - 1)
+								string target = to_string($3.array_top - $3.array_bottom  + 1);
+								if(i != ($1.names)->size() - 1)
 									tmp_target += " " + (*($1.names))[i] + "[" + target + "],";
 								else
 									tmp_target += " " + (*($1.names))[i] + "[" + target + "];\n";
@@ -244,36 +226,49 @@ declaration: declaration ';' identifier_list ':' type
 						$$ = new string(tmp_target);
 					}
 				};
-
 type: standard_type
 				{
-
+					$$.type = $1.type;
+					$$.targetCode = $1.targetCode;
 				}
 				| ARRAY '[' NUM '.' '.' NUM ']' OF standard_type
 				{
-
-				}
-				| RECORD declaration END
-				{
-
+					if($3.type != BasicType::INTEGER || $6.type != BasicType::INTEGER) {
+						yyerror("type -> ARRAY [ NUM . . NUM ] OF standard_type : 数组参数NUM类型错误!");		/////////////////////////////////////////////////////// 现在
+						yyerrok;
+					} 
+					$$.type = $9.type;
+					$$.array_top = (int)($6.num);
+					$$.array_bottom = (int)($3.num);
+					if($$.array_top - $$.array_bottom < 0) {
+						parser.yyerror("type -> ARRAY [ NUM . . NUM ] OF standard_type : 数组下界不可小于上界!");
+						parser.yyerrok;
+					}
+					$$.targetCode = $9.targetCode;
 				};
 
 standard_type: INTEGER
 				{
-
+					$$.type = new Type;
+					$$->type.type = BasicType::INTEGER;
+					$$.targetCode = new string("int");
 				}
 				| REAL
 				{
-
+					$$.type = new Type;
+					$$->type.type = BasicType::REAL;
+					$$.targetCode = new string("double");
 				}
 				| BOOLEAN
 				{
-
+					$$.type = new Type;
+					$$->type.type = BasicType::BOOLEAN;
+					$$.targetCode = new string("bool");
 				};
 
 subprogram_declarations: subprogram_declarations subprogram_declaration ';'
 				{
-					string temp = string($1->data()) + "\n" + string($2->data());
+					string temp = *($1) + "\n" + *($2);
 					$$ = new string(temp);
 				}
 				|
@@ -283,43 +278,146 @@ subprogram_declarations: subprogram_declarations subprogram_declaration ';'
 
 subprogram_declaration: subprogram_head declarations compound_statement
 				{
-					string temp = string($1->data()) + "\n" + string($2->data()) + "\n" + string($3->data()) + "\n}\n";
+					string temp = *($1) + "\n" + 
+								  *($2) + "\n" + 
+								  *($3) + "\n" + 
+								  "}\n";
 					$$ = new string(temp);
-					//TODO重定向
+					if (!symbol_table.ExitScope())
+					{
+						// TODO 错误处理, 退出作用域失败
+					}
 				};
 
 subprogram_head: FUNCTION ID arguments ':' standard_type ';'
 				{
+					// 检查函数名是否重复
+					if (sym_table.isInScope(*($2)))
+					{
+						// TODO 错误处理, ID重复定义
+					}
 
+					SymbolBuilder func_builder = Symbol.getSymbolBuilder();
+					func_builder.addName(*($2))
+						   		.setRetType($5.type->type)
+								.setDefAt(yylineno)
 
+					int dimension = 0;
+					for (const auto &[type, names] : *($3.paraTypeAndNames))
+					{
+						func_builder.addArg(type);
+						dimension += names.size();
+					}
+					func_builder.setDimension(dimension);
+					Symbol func_symbol;
+					if (!sym_table.InsertSymbol(func_symbol).first)
+					{
+						// TODO 错误处理, 插入失败
+					}
+
+					// 向符号表中添加参数
+					if (!sym_table.EnterScope(func_symbol.name))
+					{
+						// TODO 错误处理, 进入子作用域失败
+					}
+
+					for (const auto &[type, names] : *($3.paraTypeAndNames))
+					{
+						// 检查名字是否冲突
+						SymbolBuilder params_builder = Symbol.getSymbolBuilder();
+						params_builder.addType(type).setDefAt(yylineno);
+						for (const auto &name : names)
+						{
+							if (sym_table.isInScope() || name == func_symbol.name)
+							{
+								// TODO 错误处理, 名字重复或者与函数名称相同
+							}
+							auto temp_builder = params_builder;
+							temp_builder.addName(name);
+							sym_table.InsertSymbol(temp_builder.build());
+						}
+					}
+
+					string temp_code = *($5.targetCode) + " " + *($2) + *($3.targetCode);
+					$$ = new string(temp_code);
 				}
 				| FUNCTION ID arguments error
 				{
+					// TODO 错误信息输出
+					string temp_code = string("void ") + *($2) + *($3.targetCode);
+					$$ = new string(temp_code);
 				}
 				| PROCEDURE ID arguments ';'
 				{
+					// 检查函数名是否重复
+					if (sym_table.isInScope(*($2)))
+					{
+						// TODO 错误处理, ID重复定义
+					}
 
+					SymbolBuilder func_builder = Symbol.getSymbolBuilder();
+					func_builder.addName(*($2))
+								.setDefAt(yylineno)
+
+					int dimension = 0;
+					for (const auto &[type, names] : *($3.paraTypeAndNames))
+					{
+						func_builder.addArg(type);
+						dimension += names.size();
+					}
+					func_builder.setDimension(dimension);
+					Symbol func_symbol;
+					if (!sym_table.InsertSymbol(func_symbol).first)
+					{
+						// TODO 错误处理, 插入失败
+					}
+
+					// 向符号表中添加参数
+					if (!sym_table.EnterScope(func_symbol.name))
+					{
+						// TODO 错误处理, 进入子作用域失败
+					}
+
+					for (const auto &[type, names] : *($3.paraTypeAndNames))
+					{
+						// 检查名字是否冲突
+						SymbolBuilder params_builder = Symbol.getSymbolBuilder();
+						params_builder.addType(type).setDefAt(yylineno);
+						for (const auto &name : names)
+						{
+							if (sym_table.isInScope() || name == func_symbol.name)
+							{
+								// TODO 错误处理, 名字重复或者与函数名称相同
+							}
+							auto temp_builder = params_builder;
+							temp_builder.addName(name);
+							sym_table.InsertSymbol(temp_builder.build());
+						}
+					}
+
+					string temp_code = *($5.targetCode) + " " + *($2) + *($3.targetCode);
+					$$ = new string(temp_code);
 				}
 				| PROCEDURE ID arguments error ';'
 				{
-
+					// TODO 错误信息输出
+					string temp_code = string("void ") + *($2) + *($3.targetCode);
+					$$ = new string(temp_code);
 				};
 
 
 arguments: '(' parameter_lists ')'
 				{
-					$$.paraType = new vector <DATA_TYPE>;
-					for(int i = 0; i < ($2.paraType)->size(); i++)
-					{
-						($$.paraType)->push_back((*($2.paraType))[i]);
-					}
-					string temp = "(" + string(($2.targetCode)->data()) + ")";
-					$$.targetCode = new string(temp);
+					$$.paraTypeAndNames = 
+						new vector<pair<Type, vector<string>>>(*($2.paraTypeAndNames));
+					$$.targetCode = new string("(");
+					$$.targetCode->append(*($2.targetCode))
+								 ->append(")");
 				}
 				|
 				{
-					string temp = "()";
-					$$.targetCode = new string(temp);
+					$$.paraTypeAndNames = new vector<pair<Type, vector<string>>>();
+					$$.targetCode = new string("()");
 				};
 
 parameter_lists: parameter_lists ';' parameter_list
