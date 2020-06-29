@@ -124,7 +124,7 @@ identifier_list: identifier_list ',' ID
 					$$.names = new vector <string>;
 					($$.names)->push_back(string($1->data()));
 				};
-				
+
 program_body: declarations subprogram_declarations compound_statement
 				{
 					string tmp_target = string($1->data()) + string($2->data()) + "\n" + "int main()\n{\n" + string($3->data()) + "\nreturn 0;\n}\n";
@@ -165,7 +165,7 @@ declaration: declaration ';' identifier_list ':' type
 							}
 						}
 						$$ = new string(string(($1)->data()) + tmp_target);
-					}else 
+					}else
 					{
 						string tmp_target = string(($5.targetCode)->data());
 						for(int i = 0; i < ($3.names)->size(); i++) {
@@ -179,10 +179,10 @@ declaration: declaration ';' identifier_list ':' type
 								parser.yyerrok();
 							}
 							else {	// 生成目标代码
-								
+
 							}
 						}
-						$$ = new string(string(($1)->data()) + tmp_target);	
+						$$ = new string(string(($1)->data()) + tmp_target);
 					}
 				}
 				| identifier_list ':' type
@@ -275,24 +275,6 @@ parameter_lists : parameter_lists ';' parameter_list
 
 				};
 
-	struct
-	{
-		vector<pair<Type, vector<string>>> *paraTypeAndNames;
-		string *targetCode;
-	} parameterStruct;
-
-	struct
-	{
-		vector<string> *names;
-	} idList;
-
-	struct
-	{
-		Type type;
-		int arrayTop;
-		int arrayBottom;
-		string *targetCode;
-	} typeStruct;
 parameter_list : VAR identifier_list ':' type
 				{
 					// 填写参数表
@@ -301,7 +283,7 @@ parameter_list : VAR identifier_list ':' type
 
 					$$.paraTypeAndNames = new vector<pair<Type, vector<string>>>();
 				    $$.paraTypeAndNames->push_back({temp_type, *($2.names)});
-					
+
 					$$.targetCode = new string();
 
 					for (int i = 0; i < $2->size(); i++)
@@ -319,7 +301,7 @@ parameter_list : VAR identifier_list ':' type
 				    // 填写参数表
 					$$.paraTypeAndNames = new vector<pair<Type, vector<string>>>();
 				    $$.paraTypeAndNames->push_back({$4.type, *($2.names)});
-					
+
 					$$.targetCode = new string();
 
 					for (int i = 0; i < $2->size(); i++)
@@ -334,7 +316,7 @@ parameter_list : VAR identifier_list ':' type
 
 compound_statement : BEGIN optional_statements END
 				{
-					
+
 				};
 
 optional_statements : statement_list
