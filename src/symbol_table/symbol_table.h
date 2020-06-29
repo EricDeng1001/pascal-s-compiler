@@ -22,8 +22,9 @@ namespace PascalSToCPP
         CHAR,
         BOOLEAN,
         CALLABLE, // procedure, function
+        VOID,
         FIRST_VAL = INTEGER,
-        LAST_VAL = CALLABLE
+        LAST_VAL = VOID,
     };
 
     /**
@@ -189,7 +190,7 @@ namespace PascalSToCPP
         const Symbol &getSymbol(const int symbol_ind) const;
 
         // 如果当前作用域不为全局作用域, 返回其父作用域对应的符号
-        Symbol getParentSymbol() const
+        const Symbol &getParentSymbol() const
         {
             assert(!isInGlobalScope());
             return getSymbolGlobal(scope_ind_);

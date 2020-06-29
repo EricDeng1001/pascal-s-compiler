@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <fstream>
 #include <sstream>
+#include <optional>
 
 #include "../symbol_table/symbol_table.h"
 
@@ -208,33 +209,22 @@ arguments : '(' parameter_lists ')'
 					string temp = "()";
 					$$.targetCode = new string(temp);
 				};
+
 parameter_lists : parameter_lists ';' parameter_list
 				{
-
+					// TODO 检查顺序是否正确
+					$$.targetCode = new string($1.targetCode);
+					$$.targetCode.push_back(','); // 分隔两个参数列表
+					$$.targetCode.append(*($3.targetCode));
+					$$.paraTypeAndNames = new vector<pair<Type, vector<string>>>($1.paraTypeAndNames);
+					$$.paraTypeAndNames.push_back($3.parameter_list->front());
 				}
 				| parameter_list
 				{
-
+					$$.targetCode = new string($1.targetCode);
+					$$.paraTypeAndNames = new vector<pair<Type, vector<string>>>($1.paraTypeAndNames);
 				};
 
-	struct
-	{
-		vector<pair<Type, vector<string>>> *paraTypeAndNames;
-		string *targetCode;
-	} parameterStruct;
-
-	struct
-	{
-		vector<string> *names;
-	} idList;
-
-	struct
-	{
-		Type type;
-		int arrayTop;
-		int arrayBottom;
-		string *targetCode;
-	} typeStruct;
 parameter_list : VAR identifier_list ':' type
 				{
 					// 填写参数表
@@ -249,56 +239,91 @@ parameter_list : VAR identifier_list ':' type
 					for (int i = 0; i < $2->size(); i++)
 					{
 						$$.targetCode->append(*($4.targetCode));
-						if (temp_type.type != BasicType::CALLABLE && temp_type.dimension)
-						$$.targetCode->append(" &")
-									 ->append($2.names[i])
-									 ->append(", ");
+						if (temp_type.isArray()) // 数组的引用区别对待
+						{
+							$$.targetCode->append(" (&")
+										 ->append($2.names[i])
+										 ->append(")");
+										 ->append(temp_type.getArrayPeriodsString())
+										 ->append(",");
+						}
+						else 
+						{
+							$$.targetCode->append(" &")
+									 	 ->append($2.names[i])
+									 	 ->append(",");
+						}
 					}
-					$$.targetCode->pop_back();
+					$$.targetCode->pop_back(); // 将最后一个逗号弹出
 				}
 				|  identifier_list ':' type
 				{
 				    // 填写参数表
+					Type &temp_type = *($4.type);
+					temp_type.is_ref = false;
+
 					$$.paraTypeAndNames = new vector<pair<Type, vector<string>>>();
-				    $$.paraTypeAndNames->push_back({$4.type, *($2.names)});
+				    $$.paraTypeAndNames->push_back({temp_type, *($2.names)});
 					
 					$$.targetCode = new string();
 
 					for (int i = 0; i < $2->size(); i++)
 					{
-						$$.targetCode->append(*($4.targetCode))
-									 ->append(" &")
-									 ->append($2.names[i])
-									 ->append(", ");
+						$$.targetCode->append(*($4.targetCode) + " ")
+									 ->append($2.names[i]);
+						if (temp_type.isArray())
+							$$.targetCode->append(temp_type.getArrayPeriodsString());
+						$$.targetCode->push_back(',');
 					}
-					$$.targetCode->pop_back();
+					$$.targetCode->pop_back(); // 将最后一个逗号弹出
 				};
 
 compound_statement : BEGIN optional_statements END
 				{
-					
+					string temp_code;
+					temp_code.append("{\n")
+							 .append(*($2.targetCode))
+							 .append("\n}\n");
+					// $$.targetCode = new string(move(temp_code));
+					$$.targetCode = new string(temp_code);
 				};
 
 optional_statements : statement_list
 				{
-
+					$$.targetCode = new string(*($1.targetCode));
 				}
 				|
 				{
-
+					$$.targetCode = new string("");
 				};
 
 statement_list : statement_list ';' statement
 				{
-
+					$$.targetCode = new string(*($1.targetCode));
+					$$.targetCode->append(*($2.targetCode) + "\n");
 				}
 				| statement
 				{
-
+					$$.targetCode = new string(*($1.targetCode) + "\n");
 				};
 
+	struct
+	{
+		Type type;
+		string *targetCode;
+	}expStruct;
 statement : variable ASSIGNOP expression
 				{
+					// expression.type 已经是表达式运算最终的结果
+					optional<Type> lhs_type{nullopt};
+					Type rhs_type = $3.type->type;
+
+					if ($1.type->type == BasicType::CALLABLE)
+						lhs_type = $1.type->ret_type;
+					else
+						lhs_type = $1.type->type;
+
+					
 
 				}
 				| procedure_call_statement
