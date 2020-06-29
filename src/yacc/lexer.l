@@ -28,40 +28,40 @@ annotation        {block_annotation}|{line_annotation}
 %%
 
 
-program                           {yylval.targetCode = new string(yytext); Type return PROGRAM;}
-var								  {yylval.targetCode = new string(yytext); Type return VAR;}
-array                             {yylval.targetCode = new string(yytext); Type return ARRAY;}
-of                                {yylval.targetCode = new string(yytext); Type return OF;}
-record                            {yylval.targetCode = new string(yytext); Type return RECORD;}
-integer                           {yylval.targetCode = new string(yytext); Type return INTEGER;}
-real                              {yylval.targetCode = new string(yytext); Type return REAL;}
-boolean                           {yylval.targetCode = new string(yytext); Type return BOOLEAN;}
-function                          {yylval.targetCode = new string(yytext); Type return FUNCTION;}
-procedure                         {yylval.targetCode = new string(yytext); Type return PROCEDURE;}
-begin                             {yylval.targetCode = new string(yytext); Type return BEGIN;}
-end                               {yylval.targetCode = new string(yytext); Type return END;}
-if                                {yylval.targetCode = new string(yytext); Type return IF;}
-then                              {yylval.targetCode = new string(yytext); Type return THEN;}
-else                              {yylval.targetCode = new string(yytext); Type return ELSE;}
-while                             {yylval.targetCode = new string(yytext); Type return WHILE;}
-do                                {yylval.targetCode = new string(yytext); Type return DO;}
-read                              {yylval.targetCode = new string(yytext); Type return READ;}
-write                             {yylval.targetCode = new string(yytext); Type return WRITE;}
-not                               {yylval.targetCode = new string(yytext); Type return NOT;}
-true                              {yylval.targetCode = new string(yytext); Type return TRUE;}
-false                             {yylval.targetCode = new string(yytext); Type return FALSE;}
+program                           {yylval.targetCode = new string(yytext); Type return TOK_PROGRAM;}
+var								  {yylval.targetCode = new string(yytext); Type return TOK_VAR;}
+array                             {yylval.targetCode = new string(yytext); Type return TOK_ARRAY;}
+of                                {yylval.targetCode = new string(yytext); Type return TOK_OF;}
+record                            {yylval.targetCode = new string(yytext); Type return TOK_RECORD;}
+integer                           {yylval.targetCode = new string(yytext); Type return TOK_INTEGER;}
+real                              {yylval.targetCode = new string(yytext); Type return TOK_REAL;}
+boolean                           {yylval.targetCode = new string(yytext); Type return TOK_BOOLEAN;}
+function                          {yylval.targetCode = new string(yytext); Type return TOK_FUNCTION;}
+procedure                         {yylval.targetCode = new string(yytext); Type return TOK_PROCEDURE;}
+begin                             {yylval.targetCode = new string(yytext); Type return TOK_BEGIN;}
+end                               {yylval.targetCode = new string(yytext); Type return TOK_END;}
+if                                {yylval.targetCode = new string(yytext); Type return TOK_IF;}
+then                              {yylval.targetCode = new string(yytext); Type return TOK_THEN;}
+else                              {yylval.targetCode = new string(yytext); Type return TOK_ELSE;}
+while                             {yylval.targetCode = new string(yytext); Type return TOK_WHILE;}
+do                                {yylval.targetCode = new string(yytext); Type return TOK_DO;}
+read                              {yylval.targetCode = new string(yytext); Type return TOK_READ;}
+write                             {yylval.targetCode = new string(yytext); Type return TOK_WRITE;}
+not                               {yylval.targetCode = new string(yytext); Type return TOK_NOT;}
+true                              {yylval.targetCode = new string(yytext); Type return TOK_TRUE;}
+false                             {yylval.targetCode = new string(yytext); Type return TOK_FALSE;}
 
-("="|"<>"|"<"|"<="|">"|">=")      {yylval.targetCode = new string(yytext); Type return RELOP;}
-("+"|"-"|"or")                    {yylval.targetCode = new string(yytext); Type return ADDOP;}
-("*"|"/"|"div"|"mod"|"and")       {yylval.targetCode = new string(yytext); Type return MULOP;}
-":="                              {yylval.targetCode = new string(yytext); Type return ASSIGNOP;}
+("="|"<>"|"<"|"<="|">"|">=")      {yylval.targetCode = new string(yytext); Type return TOK_RELOP;}
+("+"|"-"|"or")                    {yylval.targetCode = new string(yytext); Type return TOK_ADDOP;}
+("*"|"/"|"div"|"mod"|"and")       {yylval.targetCode = new string(yytext); Type return TOK_MULOP;}
+":="                              {yylval.targetCode = new string(yytext); Type return TOK_ASSIGNOP;}
 
 ("."|";"|","|":"|"["|"]"|"("|")") { yylval.targetCode = new string(yytext); Type return *yytext;}
 
-{id}                              {yylval.targetCode = new string(yytext);  Type return ID;}
+{id}                              {yylval.targetCode = new string(yytext);  Type return TOK_ID;}
 
-{digits}                          {yylval.targetDigitCode.targetCode = new string(yytext);yylval.targetDigitCode.isReal = 0; Type return NUM;}
-{num}                             {yylval.targetDigitCode.targetCode = new string(yytext);yylval.targetDigitCode.isReal = 1; Type return NUM;}
+{digits}                          {yylval.targetDigitCode.targetCode = new string(yytext);yylval.targetDigitCode.isReal = 0; Type return TOK_NUM;}
+{num}                             {yylval.targetDigitCode.targetCode = new string(yytext);yylval.targetDigitCode.isReal = 1; Type return TOK_NUM;}
 
 {annotation}                      {}
 {white_space}                     {}

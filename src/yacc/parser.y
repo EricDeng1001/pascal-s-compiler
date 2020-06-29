@@ -62,14 +62,14 @@ SymbolTable sym_table;
 	}expStruct;
 }
 
-%token <targetCode> PROGRAM VAR ARRAY OF RECORD INTEGER REAL BOOLEAN FUNCTION PROCEDURE  DO
-					BEGIN IF THEN END NOT WHILE READ WRITE ELSE TRUE FALSE INPUT OUTPUT
+%token <targetCode> TOK_PROGRAM TOK_VAR TOK_ARRAY TOK_OF TOK_RECORD TOK_INTEGER TOK_REAL TOK_BOOLEAN TOK_FUNCTION TOK_PROCEDURE TOK_DO
+					TOK_BEGIN TOK_IF TOK_THEN TOK_END TOK_NOT TOK_WHILE TOK_READ TOK_WRITE TOK_ELSE TOK_TRUE TOK_FALSE TOK_INPUT TOK_OUTPUT
 
-%token <targetCode> RELOP ADDOP MULOP ASSIGNOP
+%token <targetCode> TOK_RELOP TOK_ADDOP TOK_MULOP TOK_ASSIGNOP
 
-%token <targetCode>	ID
+%token <targetCode>	TOK_ID
 
-%token <targetDigitCode> NUM
+%token <targetDigitCode> TOK_NUM
 
 %type <targetCode>  program program_head subprogram_head program_body declarations declaration
 					subprogram_declarations subprogram_declaration statement compound_statement
@@ -101,19 +101,19 @@ program: program_head program_body '.'
 					yyerrok;
 				};
 
-program_head: PROGRAM ID '(' INPUT ',' OUTPUT ')' ';'
+program_head: TOK_PROGRAM TOK_ID '(' TOK_INPUT ',' TOK_OUTPUT ')' ';'
 				{
 					$$ = new string("#include <iostream>\n#include <cmath>\nusing namespace std;\n"); //填写C++程序首部
 				};
 
-identifier_list: identifier_list ',' ID
+identifier_list: identifier_list ',' TOK_ID
 				{
 					// 记录已经录入的参数
 					$$.names = new vector<string>(*($1.names));
 					// 记录新的id
 					($$.names)->push_back(*($3));
 				}
-				| ID
+				| TOK_ID
 				{
 					$$.names = new vector<string>();
 					($$.names)->push_back(*($1));
@@ -129,7 +129,7 @@ program_body: declarations subprogram_declarations compound_statement
 					$$ = new string(tmp_target);
 				};
 
-declarations: VAR declaration ';'
+declarations: TOK_VAR declaration ';'
 				{
 					$$ = $2;
 				}
@@ -231,7 +231,7 @@ type: standard_type
 					$$.type = $1.type;
 					$$.targetCode = $1.targetCode;
 				}
-				| ARRAY '[' NUM '.' '.' NUM ']' OF standard_type
+				| TOK_ARRAY '[' TOK_NUM '.' '.' TOK_NUM ']' TOK_OF standard_type
 				{
 					if($3.type != BasicType::INTEGER || $6.type != BasicType::INTEGER) {
 						yyerror("type -> ARRAY [ NUM . . NUM ] OF standard_type : 数组参数NUM类型错误!");		/////////////////////////////////////////////////////// 现在
@@ -247,19 +247,19 @@ type: standard_type
 					$$.targetCode = $9.targetCode;
 				};
 
-standard_type: INTEGER
+standard_type: TOK_INTEGER
 				{
 					$$.type = new Type;
 					$$->type.type = BasicType::INTEGER;
 					$$.targetCode = new string("int");
 				}
-				| REAL
+				| TOK_REAL
 				{
 					$$.type = new Type;
 					$$->type.type = BasicType::REAL;
 					$$.targetCode = new string("double");
 				}
-				| BOOLEAN
+				| TOK_BOOLEAN
 				{
 					$$.type = new Type;
 					$$->type.type = BasicType::BOOLEAN;
@@ -289,7 +289,7 @@ subprogram_declaration: subprogram_head declarations compound_statement
 					}
 				};
 
-subprogram_head: FUNCTION ID arguments ':' standard_type ';'
+subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 				{
 					// 检查函数名是否重复
 					if (sym_table.isInScope(*($2)))
@@ -343,14 +343,14 @@ subprogram_head: FUNCTION ID arguments ':' standard_type ';'
 					string temp_code = *($5.targetCode) + " " + *($2) + *($3.targetCode);
 					$$ = new string(temp_code);
 				}
-				| FUNCTION ID arguments error
+				| TOK_FUNCTION TOK_ID arguments error
 				{
 					yyerror("函数 " + *($2) + " 没有返回值");
 					yyerrok;
 					string temp_code = string("void ") + *($2) + *($3.targetCode);
 					$$ = new string(temp_code);
 				}
-				| PROCEDURE ID arguments ';'
+				| TOK_PROCEDURE TOK_ID arguments ';'
 				{
 					// 检查函数名是否重复
 					if (sym_table.isInScope(*($2)))
@@ -403,7 +403,7 @@ subprogram_head: FUNCTION ID arguments ':' standard_type ';'
 					string temp_code = "void " + *($2) + *($3.targetCode);
 					$$ = new string(temp_code);
 				}
-				| PROCEDURE ID arguments error ';'
+				| TOK_PROCEDURE TOK_ID arguments error ';'
 				{
 					yyerror("过程 " + *($2) + " 不能有返回值");
 					yyerrok;
@@ -440,7 +440,7 @@ parameter_lists: parameter_lists ';' parameter_list
 					$$.paraTypeAndNames = new vector<pair<Type, vector<string>>>($1.paraTypeAndNames);
 				};
 
-parameter_list: VAR identifier_list ':' type
+parameter_list: TOK_VAR identifier_list ':' type
 				{
 					// 填写参数表
 					Type &temp_type = *($4.type);
@@ -493,7 +493,7 @@ parameter_list: VAR identifier_list ':' type
 					$$.targetCode->pop_back(); // 将最后一个逗号弹出
 				};
 
-compound_statement: BEGIN optional_statements END
+compound_statement: TOK_BEGIN optional_statements TOK_END
 				{
 					string temp_code;
 					temp_code.append("{\n")
@@ -522,7 +522,7 @@ statement_list: statement_list ';' statement
 					$$ = new string(*($1) + ";\n");
 				};
 
-statement: variable ASSIGNOP expression
+statement: variable TOK_ASSIGNOP expression
 				{
 					Type lhs_type, rhs_type;
 					bool is_return{false};
@@ -572,7 +572,7 @@ statement: variable ASSIGNOP expression
 				{
 					$$ = new string(*($1) + ";");
 				}
-				| IF expression THEN statement
+				| TOK_IF expression TOK_THEN statement
 				{
 					Type expr_type = $2.type->type;
 					if (expr_type.type != BasicType::BOOLEAN)
@@ -587,7 +587,7 @@ statement: variable ASSIGNOP expression
 							 .append(*($4))
 							 .append("\n}\n");
 				}
-				| IF expression THEN statement ELSE statement
+				| TOK_IF expression TOK_THEN statement TOK_ELSE statement
 				{
 					Type expr_type = $2.type->type;
 					if (expr_type.type != BasicType::BOOLEAN)
@@ -605,7 +605,7 @@ statement: variable ASSIGNOP expression
 							 .append(*($6) + "\n")
 							 .append("}\n");
 				}
-				| WHILE expression DO statement
+				| TOK_WHILE expression TOK_DO statement
 				{
 					Type expr_type = $2.type->type;
 					if (expr_type.type != BasicType::BOOLEAN)
@@ -620,7 +620,7 @@ statement: variable ASSIGNOP expression
 							 .append(*($4) + "\n")
 							 .append("}\n");
 				}
-				| READ '(' identifier_list ')'
+				| TOK_READ '(' identifier_list ')'
 				{
 					string temp_code("cin");
 					for (const auto &name : *($3.names))
@@ -628,7 +628,7 @@ statement: variable ASSIGNOP expression
 								 .append(name);
 					$$ = new string(temp_code);
 				}
-				| WRITE '(' expr_list ')'
+				| TOK_WRITE '(' expr_list ')'
 				{
 					string temp_code("cout");
 					for (int i = 0; i < $3.types->size(); i++)
@@ -645,7 +645,7 @@ statement: variable ASSIGNOP expression
 								 .append(name);
 				};
 
-variable: ID
+variable: TOK_ID
 				{
           			Symbol* symbol = sym_table.getSymbol(*($1));
           			if (symbol == nullptr) {
@@ -672,7 +672,7 @@ variable: ID
           			  $$.targetCode = new string(*($1));
           			}
 				}
-				| ID '[' expression ']'
+				| TOK_ID '[' expression ']'
 				{
           			Symbol* symbol = sym_table.getSymbol(*($1));
           			if (symbol == nullptr) {
@@ -692,7 +692,7 @@ variable: ID
           			}
 				};
 
-procedure_call_statement: ID
+procedure_call_statement: TOK_ID
 				{
           			Symbol* symbol = sym_table.getSymbol(*($1));
           			if (symbol == nullptr) {
@@ -707,7 +707,7 @@ procedure_call_statement: ID
           			  }
           			}
 				}
-				| ID '(' expr_list ')'
+				| TOK_ID '(' expr_list ')'
 				{
           			Symbol* symbol = sym_table.getSymbol(*($1));
           			if (symbol == nullptr) {
@@ -755,7 +755,7 @@ expr_list: expr_list ',' expression
           			$$.targetCode = new string(*($1.targetCode));
 				};
 
-expression: simple_expr RELOP simple_expr
+expression: simple_expr TOK_RELOP simple_expr
 				{
           			string relop;
           			if (!($1.type->isCallable()) && !($1.type->isArray())
@@ -781,7 +781,7 @@ expression: simple_expr RELOP simple_expr
           			$$.targetCode = new string(*($1));
 				};
 
-simple_expr: simple_expr ADDOP term
+simple_expr: simple_expr TOK_ADDOP term
 				{
           			if ($1.type->isCallable() || $1.type->isArray()
           			|| $3.type->isCallable() || $3.type->isArray()) {
@@ -825,7 +825,7 @@ simple_expr: simple_expr ADDOP term
          			$$.targetCode = new string(*($1) + *($2.targetCode));
 				};
 
-term: term MULOP factor
+term: term TOK_MULOP factor
 				{
           			if ($1.type->isCallable() || $1.type->isArray() ||
 					    $3.type->isCallable() || $3.type->isArray()) {
@@ -882,7 +882,7 @@ term: term MULOP factor
           			$$.targetCode = new string(*($1));
 				};
 
-factor: ID
+factor: TOK_ID
 				{
           			Symbol* symbol = sym_table.getSymbol(*($1));
           			if (symbol == nullptr) {
@@ -909,7 +909,7 @@ factor: ID
           			  	}
           			}
 				}
-				| ID '(' expr_list ')'
+				| TOK_ID '(' expr_list ')'
 				{
           			Symbol* symbol = sym_table.getSymbol(*($1));
           			if (symbol == nullptr) {
@@ -940,7 +940,7 @@ factor: ID
           			  	}
           			}
 				}
-				| ID '[' expression ']'
+				| TOK_ID '[' expression ']'
 				{
 					if ($3.type->type != BasicType::INTEGER)
 					{
@@ -968,7 +968,7 @@ factor: ID
 					string temp_code = *($1) + "[" + *($3.targetCode) + "-" + to_string(lb) + "]";
 					$$.targetCode = new string(temp_code);
 				}
-				| NUM
+				| TOK_NUM
 				{
 					$$.type = new Type();
 					$$.targetCode = new string(*($1.targetCode));
@@ -983,7 +983,7 @@ factor: ID
 					$$.targetCode = new string();
 					*($$.targetCode) = "(" + *($2.targetCode) + ")";
 				}
-				| NOT factor
+				| TOK_NOT factor
 				{
 					if ($2.type->type != BasicType::BOOLEAN)
 					{
@@ -995,13 +995,13 @@ factor: ID
 					$$.targetCode->append(*($2.targetCode));
 					$$.type->type = BasicType::BOOLEAN;
 				}
-				| TRUE
+				| TOK_TRUE
 				{
 					$$.type = new Type();
 					$$.targetCode = new string("true");
 					$$.type->type = BasicType::BOOLEAN;
 				}
-				| FALSE
+				| TOK_FALSE
 				{
 				 	$$.type = new Type();
 					$$.targetCode = new string("false");
