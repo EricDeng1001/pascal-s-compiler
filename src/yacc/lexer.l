@@ -52,7 +52,7 @@ true                              {yylval.targetCode = new string(yytext); Type 
 false                             {yylval.targetCode = new string(yytext); Type return FALSE;}
 
 ("="|"<>"|"<"|"<="|">"|">=")      {yylval.targetCode = new string(yytext); Type return RELOP;}
-("+"|"-"|"div")                   {yylval.targetCode = new string(yytext); Type return ADDOP;}
+("+"|"-"|"or")                    {yylval.targetCode = new string(yytext); Type return ADDOP;}
 ("*"|"/"|"div"|"mod"|"and")       {yylval.targetCode = new string(yytext); Type return MULOP;}
 ":="                              {yylval.targetCode = new string(yytext); Type return ASSIGNOP;}
 

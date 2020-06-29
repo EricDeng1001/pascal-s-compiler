@@ -40,17 +40,17 @@ fstream error_stream; // 目标代码输出流
 
 
 //表达式列表
-typedef struct 
+typedef struct
 {
-	vector <string> idNameList;	
+	vector <string> idNameList;
 	vector <DATA_TYPE> dataTypeList;
 	vector <TABLE_TYPE> tableTypeList;
 }parameteList;
 
 //表达式列表
-typedef struct 
+typedef struct
 {
-	vector <int> lowList;	
+	vector <int> lowList;
 	vector <int> highList;
 }paraArrayList;
 
@@ -68,55 +68,55 @@ bool needReturn = false;
 {
 	//目标代码
 	string* targetCode;
-	
+
 	//数字转化后的目标代码
-	struct 
+	struct
 	{
-		double num;	
+		double num;
 		DATA_TYPE dataType;
-	    string* targetCode;	
+	    string* targetCode;
 	}targetDigitCode;
-	
+
 	//标识符
-	struct 
+	struct
 	{
-		vector <string>* idNameList;	
+		vector <string>* idNameList;
 	   // vector <string>* idValueList;
 	}idList;
-	
+
 	//表达式列表
-	struct 
+	struct
 	{
-		vector <string>* idNameList;	
+		vector <string>* idNameList;
 	    vector <DATA_TYPE>*dataTypeList;
 	    vector <TABLE_TYPE>* tableTypeList;
 	    string* targetCode;
 	}exprList;
 
 	// 变量类型
-	struct 
+	struct
 	{
-		DATA_TYPE id_type; 
+		DATA_TYPE id_type;
 		TABLE_TYPE table_type;
 		int array_top;
 		int array_bottom;
-		string* targetCode; 
+		string* targetCode;
 	}typeStruct;
-	
-	struct 
+
+	struct
 	{
 		vector <DATA_TYPE>* paraType;
 		string* targetCode;
 	}parameterStruct;
-	
+
 	// 变量类型
-	struct 
+	struct
 	{
 		DATA_TYPE value_type;
 		TABLE_TYPE table_type;
 		string* targetCode;
 	}expStruct;
-	
+
 }
 
 // parser name
@@ -148,22 +148,22 @@ bool needReturn = false;
 
 //关键字
 %token <targetCode> PROGRAM  VAR  ARRAY  OF  RECORD  INTEGER
-								 REAL  BOOLEAN  FUNCTION  PROCEDURE  DO  
+								 REAL  BOOLEAN  FUNCTION  PROCEDURE  DO
 								 BEGIN  IF  THEN  END  NOT  WHILE  READ
-								 WRITE  ELSE  TRUE  FALSE 
+								 WRITE  ELSE  TRUE  FALSE
 
 //关系运算符，运算符(+,-,or)，运算符(*,/,div,mod,and),赋值运算符
 %token <targetCode> RELOP  ADDOP  MULOP  ASSIGNOP
-//标识符        
+//标识符
 %token <targetCode>	ID
 //数字
 %token <targetDigitCode> NUM
 
 //非终结符
-%type <targetCode>  program  program_head  subprogram_head   program_body declarations  declaration  
+%type <targetCode>  program  program_head  subprogram_head   program_body declarations  declaration
 					subprogram_declarations  subprogram_declaration statement    compound_statement
 					optional_statements  procedure_call_statement statement_list  sign
-						    	 
+
 // 变量列表
 %type <idList> identifier_list
 
@@ -171,12 +171,12 @@ bool needReturn = false;
 %type <exprList> expr_list
 
 // 变量类型
-%type <typeStruct> type  standard_type 
+%type <typeStruct> type  standard_type
 
 %type <expStruct> variable expression  simple_expr  term factor
- 
+
 // 函数参数列表
-%type <parameterStruct> parameter_list  parameter_lists  arguments 
+%type <parameterStruct> parameter_list  parameter_lists  arguments
 
 %%
 
@@ -203,7 +203,7 @@ program : program_head program_body '.'
 					parser.yyerror("program -> program_head program_body . : missing '.'at the end of the program.");
 					parser.yyerrok();
 				};
-			   
+
 program_head : PROGRAM ID '(' identifier_list ')' ';'
 				{
 					debug_stream<<"	YACC--program_head->PROGRAM ID ( identifier_list ) ;" << endl;
@@ -213,7 +213,7 @@ program_head : PROGRAM ID '(' identifier_list ')' ';'
 
 					// 新块定向操作
 					sym_table.locate();
-					
+
 					// 写入程序ID
 					functionInfo proID_In;
 					proID_In.declareRow = lexer.yylineno;
@@ -221,19 +221,19 @@ program_head : PROGRAM ID '(' identifier_list ')' ';'
 						parser.yyerror("program_head -> PROGRAM ID ( identifier_list ) ; : redefined program ID !");
 						parser.yyerrok();
 					}
-					
+
 					// 记录程序输入参数
 					for(int i = 0; i < ($4.idNameList)->size(); i++) {
 						// 将identifier_list写入符号表
 						varInfo argvIn;
 						argvIn.declareRow = lexer.yylineno;
-						
+
 						if(sym_table.insert((*($4.idNameList))[i], argvIn) == NULL) {
 							parser.yyerror("program_head -> PROGRAM ID ( identifier_list ) ; : redefined input identifiers!");
 							parser.yyerrok();
 						}
 					}
-					
+
 				};
 
 identifier_list : identifier_list ',' ID
@@ -253,7 +253,7 @@ identifier_list : identifier_list ',' ID
 					$$.idNameList = new vector <string>;
 					($$.idNameList)->push_back(string($1->data()));
 				};
-				
+
 program_body : declarations subprogram_declarations compound_statement
 				{
 					debug_stream << "	YACC--program_body->declarations subprogram_declarations compound_statement" << endl;
@@ -261,7 +261,7 @@ program_body : declarations subprogram_declarations compound_statement
 					$$ = new string(tmp_target);
 					debug_stream << "	data() = " << $$->data() << endl;
 				};
-				
+
 declarations : VAR declaration ';'
 				{
 					debug_stream << "	YACC--declarations->VAR declaration ;" << endl;
@@ -269,14 +269,14 @@ declarations : VAR declaration ';'
 					$$ = new string(tmp_target);
 					debug_stream << "	data() = " << $$->data() << endl;
 				}
-				| 
+				|
 				{
 					debug_stream << "	YACC--declarations->NULL" << endl;
 					$$ = new string("");
 					debug_stream << "	data() = " << $$->data() << endl;
 					// do nothing
 				};
-				
+
 declaration : declaration ';' identifier_list ':' type
 				{
 					debug_stream << "	YACC--declaration->declaration ; identifier_list : type" << endl;
@@ -316,19 +316,19 @@ declaration : declaration ';' identifier_list ':' type
 							}
 							else {	// 生成目标代码
 								int array_range = $5.array_top - $5.array_bottom  + 1;
-								
-								stringstream ss; 
+
+								stringstream ss;
 								string target;
 								ss << array_range;
 								ss >> target;
-								
+
 								if(i != ($3.idNameList)->size() - 1)
 									tmp_target += " " + (*($3.idNameList))[i] + "[" + target + "],";
 								else
 									tmp_target += " " + (*($3.idNameList))[i] + "[" + target + "];\n";
 							}
 						}
-						$$ = new string(string(($1)->data()) + tmp_target);	
+						$$ = new string(string(($1)->data()) + tmp_target);
 						debug_stream << "	data() = " << $$->data() << endl;
 					}
 				}
@@ -371,7 +371,7 @@ declaration : declaration ';' identifier_list ':' type
 							}
 							else {	// 生成目标代码
 								int array_range = $3.array_top - $3.array_bottom  + 1;
-								stringstream ss; 
+								stringstream ss;
 								string target;
 								ss << array_range;
 								ss >> target;
@@ -385,7 +385,7 @@ declaration : declaration ';' identifier_list ':' type
 						debug_stream << "	data() = " << $$->data() << endl;
 					}
 				};
-				
+
 type : standard_type
 				{
 					debug_stream << "	YACC--type->standard_type" << endl;
@@ -400,7 +400,7 @@ type : standard_type
 					if($3.dataType != INT_T || $6.dataType != INT_T) {
 						parser.yyerror("type -> ARRAY [ NUM . . NUM ] OF standard_type : 数组参数NUM类型错误!");		/////////////////////////////////////////////////////// 现在
 						parser.yyerrok();
-					} 
+					}
 					$$.id_type = $9.id_type;
 					$$.table_type = ARRAY_T;
 					$$.array_top = (int)($6.num);
@@ -417,11 +417,11 @@ type : standard_type
 					debug_stream<<"	YACC--type->RECORD declaration END" << endl;
 					$$.id_type = RECORD_T;
 					$$.table_type = VARIBLE_T;
-					string tmp_target = "struct {\n" + string($2->data()) + "\n} "; 
+					string tmp_target = "struct {\n" + string($2->data()) + "\n} ";
 					$$.targetCode = new string(tmp_target);
 					debug_stream << "	data() = " << ($$.targetCode)->data() << endl;
 				};
-				
+
 standard_type : INTEGER
 				{
 					debug_stream<<"	YACC--standard_type->INTEGER" << endl;
@@ -446,14 +446,14 @@ standard_type : INTEGER
 					$$.targetCode = new string("bool ");
 					debug_stream << "	data() = " << ($$.targetCode)->data() << endl;
 				};
-				
+
 subprogram_declarations : subprogram_declarations subprogram_declaration ';'
 				{
 					debug_stream << "	YACC--subprogram_declarations->subprogram_declarations subprogram_declaration ;" << endl;
 					string tmp_target = string($1->data()) + "\n" +  string($2->data());
 					$$ = new string(tmp_target);
 					debug_stream << "	data() = " << ($$)->data() << endl;
-				}			
+				}
 				|
 				{
 					debug_stream << "	YACC--subprogram_declarations->NULL"<<endl;
@@ -461,7 +461,7 @@ subprogram_declarations : subprogram_declarations subprogram_declaration ';'
 					debug_stream << "	data() = " << ($$)->data() << endl;
 					 // do nothing
 				};
-				
+
 subprogram_declaration : subprogram_head declarations compound_statement
 				{
 					debug_stream << "	YACC--subprogram_declaration->subprogram_head declarations compound_statement" << endl;
@@ -472,17 +472,17 @@ subprogram_declaration : subprogram_head declarations compound_statement
 					sym_table.relocate();
 					currentFunction = "";
 				};
-				
+
 subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 				{
 					debug_stream << "	YACC--subprogram_head->FUNCTION ID arguments : standard_type ;" << endl;
-					
+
 					// 更新functionTable
 					functionInfo funcID_In;
 					funcID_In.declareRow = lexer.yylineno;
 					funcID_In.retType = $5.id_type;
 					funcID_In.paraNum = paraList.idNameList.size();
-					
+
 					int i;
 					for(i = 0; i < ($3.paraType)->size(); i++)	{
 						funcID_In.paraType.push_back(paraList.dataTypeList[i]);
@@ -493,11 +493,11 @@ subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 						parser.yyerror("subprogram_head -> FUNCTION ID arguments : standard_type ; : redefined function id!");
 						parser.yyerrok();
 					}
-					//定向	
+					//定向
 					sym_table.locate();
 					//更新当前函数名
 					currentFunction = string($2->data());
-					
+
 					//更新符号表，将参数列表插入到符号表中
 					int j = 0;
 					for(i = 0;i < paraList.idNameList.size();i++){
@@ -510,7 +510,7 @@ subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 								parser.yyerror("parameter_list -> VAR identifier_list : type : redefined variable id in identifier_list!");
 								parser.yyerrok();
 							}
-							
+
 						}
 						else if(paraList.tableTypeList[i] == ARRAY_T){
 							arrayInfo declare_In;
@@ -519,24 +519,24 @@ subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 							declare_In.high = arrayList.highList[j];
 							j++;
 							declare_In.declareRow = lexer.yylineno;
-							
+
 							// 插入到符号表
 							if(sym_table.insert(paraList.idNameList[i], declare_In) == NULL) {
 								parser.yyerror("parameter_list -> VAR identifier_list : type : redefined array id in identifier_list!");
 								parser.yyerrok();
 							}
-							
+
 						}
 					}
-					
+
 					//清空缓存
 					paraList.idNameList.clear();
 					paraList.dataTypeList.clear();
 					paraList.tableTypeList.clear();
 					arrayList.lowList.clear();
 					arrayList.highList.clear();
-					
-					// 生成目标代码 
+
+					// 生成目标代码
 					string tmp_target =  string(($5.targetCode)->data()) + " " +  string($2->data()) +  string(($3.targetCode)->data()) + " {";
 					$$ = new string(tmp_target);
 					debug_stream << "	data() = " << ($$)->data() << endl;
@@ -553,7 +553,7 @@ subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 				| PROCEDURE ID arguments ';'
 				{
 					debug_stream << "	YACC--subprogram_head->PROCEDURE ID arguments" << endl;
-					
+
 					// 写入程序ID
 					procedureInfo porcID_In;
 					porcID_In.declareRow = lexer.yylineno;
@@ -567,10 +567,10 @@ subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 						parser.yyerror("subprogram_head -> PROCEDURE ID arguments : redefined procedure id!");
 						parser.yyerrok();
 					}
-					
+
 					// 新块，定向
 					sym_table.locate();
-					
+
 					//更新符号表，将参数列表插入到符号表中
 					int j = 0;
 					for(i = 0;i < paraList.idNameList.size();i++){
@@ -591,13 +591,13 @@ subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 							declare_In.high = arrayList.highList[j];
 							j++;
 							declare_In.declareRow = lexer.yylineno;
-							
+
 							// 插入到符号表
 							if(sym_table.insert(paraList.idNameList[i], declare_In) == NULL) {
 								parser.yyerror("parameter_list -> VAR identifier_list : type : redefined array id in identifier_list!");
 								parser.yyerrok();
 							}
-							
+
 						}
 					}
 					//清空缓存
@@ -606,8 +606,8 @@ subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 					paraList.tableTypeList.clear();
 					arrayList.lowList.clear();
 					arrayList.highList.clear();
-					
-					// 生成目标代码 
+
+					// 生成目标代码
 					string tmp_target = "void " +  string($2->data()) +  string(($3.targetCode)->data()) + "{";
 					$$ = new string(tmp_target);
 					debug_stream << "	data() = " << ($$)->data() << endl;
@@ -621,7 +621,7 @@ subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 
 					// 新块，定向
 					sym_table.locate();
-					
+
 					// 写入程序ID
 					procedureInfo porcID_In;
 					porcID_In.declareRow = lexer.yylineno;
@@ -634,14 +634,14 @@ subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 						parser.yyerror("subprogram_head -> PROCEDURE ID arguments : redefined procedure id!");
 						parser.yyerrok();
 					}
-					
-					// 生成目标代码 
+
+					// 生成目标代码
 					string tmp_target = "void " +  string($2->data()) +  string(($3.targetCode)->data()) + "{";
 					$$ = new string(tmp_target);
 					debug_stream << "	data() = " << ($$)->data() << endl;
 				};
 
-				
+
 arguments : '(' parameter_lists ')'
 				{
 					debug_stream << "	YACC--arguments->( parameter_lists )" << endl;
@@ -667,7 +667,7 @@ arguments : '(' parameter_lists ')'
 					$$.targetCode = new string(tmp_code);
 					debug_stream << "	data() = " << ($$.targetCode)->data() << endl;
 				};
-				
+
 parameter_lists : parameter_lists ';' parameter_list
 				{
 					debug_stream << "	YACC--parameter_lists->parameter_lists ; parameter_list" << endl;
@@ -680,7 +680,7 @@ parameter_lists : parameter_lists ';' parameter_list
 					for(i = 0; i < ($3.paraType)->size(); i++) {
 						($$.paraType)->push_back((*($3.paraType))[i]);
 					}
-					
+
 					// 目标代码
 					string tmp_target =  string(($1.targetCode)->data()) + ", " +  string(($3.targetCode)->data());
 					$$.targetCode = new string(tmp_target);
@@ -701,12 +701,12 @@ parameter_lists : parameter_lists ';' parameter_list
 					$$.targetCode = new string(tmp_target);
 					debug_stream << "	data() = " << ($$.targetCode)->data() << endl;
 				};
-				
+
 parameter_list : VAR identifier_list ':' type
 				{
 					debug_stream << "	YACC--parameter_list->VAR identifier_list : type" << endl;
 					$$.paraType = new vector<DATA_TYPE>;
-					
+
 					if($4.table_type == VARIBLE_T) {
 						string tmp_target =  string("");
 						for(int i = 0; i < ($2.idNameList)->size(); i++) {
@@ -714,13 +714,13 @@ parameter_list : VAR identifier_list ':' type
 							paraList.idNameList.push_back((*($2.idNameList))[i]);
 							paraList.dataTypeList.push_back($4.id_type);
 							paraList.tableTypeList.push_back($4.table_type);
-							
+
 							// 生成目标代码
 							if(i != ($2.idNameList)->size() - 1)
 								tmp_target += string(($4.targetCode)->data()) + " &" + (*($2.idNameList))[i] + ",";
 							else
 								tmp_target += string(($4.targetCode)->data()) + " &" + (*($2.idNameList))[i];
-							
+
 							// 将identifier_list类型写入到parameter_list中
 							$$.paraType->push_back($4.id_type);
 						}
@@ -730,24 +730,24 @@ parameter_list : VAR identifier_list ':' type
 					else if($4.table_type == ARRAY_T) {
 						string tmp_target =  string("");
 						for(int i = 0; i < ($2.idNameList)->size(); i++) {
-							
+
 							//更新参数表：
 							paraList.idNameList.push_back((*($2.idNameList))[i]);
 							paraList.dataTypeList.push_back($4.id_type);
 							paraList.tableTypeList.push_back($4.table_type);
 							arrayList.lowList.push_back($4.array_bottom);
 							arrayList.highList.push_back($4.array_top);
-							
+
 							// 生成目标代码
 							if(i != ($2.idNameList)->size() - 1)
 								tmp_target += string(($4.targetCode)->data()) + " &" + (*($2.idNameList))[i] + "[],";
 							else
 								tmp_target += string(($4.targetCode)->data()) + " &" + (*($2.idNameList))[i] + "[]";
-							
+
 							// 将identifier_list类型写入到parameter_list中
 							$$.paraType->push_back($4.id_type);
 						}
-						$$.targetCode = new string(tmp_target);	
+						$$.targetCode = new string(tmp_target);
 						debug_stream << "	data() = " << ($$.targetCode)->data() << endl;
 					}
 				}
@@ -755,7 +755,7 @@ parameter_list : VAR identifier_list ':' type
 				{
 					debug_stream << "	YACC--parameter_list->identifier_list : type" << endl;
 					$$.paraType = new vector<DATA_TYPE>;
-					
+
 					if($3.table_type == VARIBLE_T) {
 						string tmp_target =  string("");
 						for(int i = 0; i < ($1.idNameList)->size(); i++) {
@@ -763,13 +763,13 @@ parameter_list : VAR identifier_list ':' type
 							paraList.idNameList.push_back((*($1.idNameList))[i]);
 							paraList.dataTypeList.push_back($3.id_type);
 							paraList.tableTypeList.push_back($3.table_type);
-							
+
 							// 生成目标代码
 							if(i != ($1.idNameList)->size() - 1)
 								tmp_target += string(($3.targetCode)->data()) + " " + (*($1.idNameList))[i] + ",";
 							else
 								tmp_target += string(($3.targetCode)->data()) + " " + (*($1.idNameList))[i];
-						
+
 							// 将identifier_list类型写入到parameter_list中
 							$$.paraType->push_back($3.id_type);
 						}
@@ -785,21 +785,21 @@ parameter_list : VAR identifier_list ':' type
 							paraList.tableTypeList.push_back($3.table_type);
 							arrayList.lowList.push_back($3.array_bottom);
 							arrayList.highList.push_back($3.array_top);
-							
+
 							// 生成目标代码
 							if(i != ($1.idNameList)->size() - 1)
 								tmp_target += string(($3.targetCode)->data()) + " " + (*($1.idNameList))[i] + "[],";
 							else
 								tmp_target += string(($3.targetCode)->data()) + " " + (*($1.idNameList))[i] + "[]";
-							
+
 							// 将identifier_list类型写入到parameter_list中
 							$$.paraType->push_back($3.id_type);
 						}
-						$$.targetCode = new string(tmp_target);	
+						$$.targetCode = new string(tmp_target);
 						debug_stream << "	data() = " << ($$.targetCode)->data() << endl;
 					}
 				};
-				
+
 compound_statement : BEGIN optional_statements END
 				{
 					debug_stream<<"	YACC--compound_statement->BEGIN optional_statements END"<<endl;
@@ -807,11 +807,11 @@ compound_statement : BEGIN optional_statements END
 					string tmp_target = "";
 					tmp_target = tmp_target + "{\n";
 					tmp_target = tmp_target + string($2->data()) + "\n}// translate from END";
-	
+
 					$$ = new string(tmp_target);
 					debug_stream << "	data() = " << ($$)->data() << endl;
 				};
-				
+
 optional_statements : statement_list
 				{
 					debug_stream<<"	YACC--optional_statements->statement_list"<<endl;
@@ -819,13 +819,13 @@ optional_statements : statement_list
 					$$ = new string(tmp_target);
 					debug_stream << "	data() = " << ($$)->data() << endl;
 				}
-				| 
+				|
 				{
 					debug_stream<<"	YACC-optional_statements->NULL"<<endl;
 					$$ = new string("");
 					debug_stream << "	data() = " << ($$)->data() << endl;
 				};
-				
+
 statement_list : statement_list ';' statement
 				{
 					debug_stream << "	YACC--statement_list->statement_list ; statement"<<endl;
@@ -840,7 +840,7 @@ statement_list : statement_list ';' statement
 					$$ = new string(tmp_target);
 					debug_stream << "	data() = " << ($$)->data() << endl;
 				};
-				
+
 statement : variable ASSIGNOP expression
 				{
 					debug_stream<<"	YACC--statement->variable ASSIGNOP expression"<<endl;
@@ -859,7 +859,7 @@ statement : variable ASSIGNOP expression
 					else{
 						tmp_target =  string(($1.targetCode)->data()) + " = " +  string(($3.targetCode)->data()) + ";";
 					}
-					
+
 					$$ = new string(tmp_target);
 					debug_stream << "	data() = " << ($$)->data() << endl;
 				}
@@ -926,13 +926,13 @@ statement : variable ASSIGNOP expression
 					debug_stream << "	data() = " << ($$)->data() << endl;
 				}
 				| READ '(' identifier_list ')'
-				{		
+				{
 					debug_stream<<"	YACC--statement->READ ( identifier_list )"<<endl;
 				    // target code
 					string tmp_target = "cin";
-								
+
 					// 检查读入变量是否已经定义
-					for(int i = 0; i < ($3.idNameList)->size(); i++) {	
+					for(int i = 0; i < ($3.idNameList)->size(); i++) {
 						symbolTableItem* check = sym_table.get((*($3.idNameList))[i]);
 						if(check == NULL ) {
 							parser.yyerror("statement -> READ ( identifier_list ) : undefined identifiers in identifier_list!");
@@ -942,7 +942,7 @@ statement : variable ASSIGNOP expression
 							parser.yyerror("statement -> READ ( identifier_list ) : identifiers type is not right!");
 							parser.yyerrok();
 						}
-						
+
 						//更新targetcode
 						tmp_target += " >> " + (*($3.idNameList))[i];
 					}
@@ -959,9 +959,9 @@ statement : variable ASSIGNOP expression
 					debug_stream<<"	YACC--statement->WRITE ( expr_list )"<<endl;
 					// target code
 					string tmp_target = "cout ";
-								
+
 					//检查表达式的合法性以及生成目标代码
-					for(int i = 0; i < ($3.idNameList)->size(); i++) {	
+					for(int i = 0; i < ($3.idNameList)->size(); i++) {
 						//write参数不可以有数组类型
 						if((*($3.tableTypeList))[i] == ARRAY_T ) {
 							parser.yyerror("write函数参数不能有数组！");
@@ -972,22 +972,22 @@ statement : variable ASSIGNOP expression
 						   tmp_target += "<<" + (*($3.idNameList))[i];
 						}
 					}
-					
+
 					if(($3.idNameList)->size() == 0){
 						parser.yyerror("statement -> WRITE ( identifier_list ) : identifier_list cannot be empty!");
 						parser.yyerrok();
 					}
 
 					tmp_target += ";\n";
-					$$ = new string(tmp_target);	 
+					$$ = new string(tmp_target);
 					debug_stream << "	data() = " << ($$)->data() << endl;
 				};
-				
-variable : ID 
-				{				
+
+variable : ID
+				{
 					debug_stream<<"	YACC--variable->ID "<<endl;
 					// 检查读入变量是否已经定义
-					symbolTableItem* check = sym_table.get(string($1->data()));	
+					symbolTableItem* check = sym_table.get(string($1->data()));
 				    $$.targetCode = new string("");
 				    //符号表中不存在或标识符不是变量
 					if(check == NULL) {
@@ -1011,15 +1011,15 @@ variable : ID
 								$$.targetCode = new string("return");
 								needReturn = true;
 							}
-							
+
 						}
 						else{
-							parser.yyerror("variable -> ID : return ID is wrong!"); 
+							parser.yyerror("variable -> ID : return ID is wrong!");
 							parser.yyerrok();
 						}
 					}
 					else{
-						parser.yyerror("variable -> ID : ID here can only be VARIBLE_T or FUNCTION_T!"); 
+						parser.yyerror("variable -> ID : ID here can only be VARIBLE_T or FUNCTION_T!");
 						parser.yyerrok();
 					}
 					debug_stream << "	data() = " << ($$.targetCode)->data() << endl;
@@ -1028,7 +1028,7 @@ variable : ID
 				{
 					debug_stream<<"	YACC--variable->ID [ expression ]"<<endl;
 					// 检查是否已经定义
-					symbolTableItem* check = sym_table.get(string($1->data()));	
+					symbolTableItem* check = sym_table.get(string($1->data()));
 				    //符号表中不存在或标识符不是数组
 					if(check == NULL || check->type != ARRAY_T ) {
 							parser.yyerror("variable -> ID [ expression ] : id can only be an array!");
@@ -1044,18 +1044,18 @@ variable : ID
 						parser.yyerror("variable -> ID [ expression ] : expression needs to be of integer type!");
 						parser.yyerrok();
 					}
-					// target code 
+					// target code
 					string tmp_target =  string($1->data()) + "[" +  string($3.targetCode->data()) + "]";
 					$$.targetCode = new string(tmp_target);
 					debug_stream << "	data() = " << ($$.targetCode)->data() << endl;
 				};
-				
+
 procedure_call_statement : ID
 				{
 					debug_stream<<"	YACC--procedure_call_statement->ID"<<endl;
 					symbolTableItem* check = sym_table.get(string($1->data()));
 					// target code
-					string tmp_target = "";					
+					string tmp_target = "";
 				    // 检查是否已经定义
 					if(check == NULL) {
 							parser.yyerror("procedure_call_statement -> ID : id not defined !");
@@ -1069,7 +1069,7 @@ procedure_call_statement : ID
 							tmp_target =  string($1->data()) + ";\n";
 						}
 					}
-					
+
 					$$ = new string(tmp_target);
 					debug_stream << "	data() = " << ($$)->data() << endl;
 				}
@@ -1077,7 +1077,7 @@ procedure_call_statement : ID
 				{
 					debug_stream<<"	YACC--procedure_call_statement->ID ( expr_list )"<<endl;
 					string tmp_target =  string("");
-					symbolTableItem* check = sym_table.get(string($1->data()));	
+					symbolTableItem* check = sym_table.get(string($1->data()));
 				    // 检查是否已经定义
 					if(check == NULL) {
 						parser.yyerror("procedure_call_statement -> ID ( expr_list ): id not defined!");
@@ -1086,7 +1086,7 @@ procedure_call_statement : ID
 					else if(check->type == PROCEDURE_T) {
 						procedureInfo* proceInfo = sym_table.getProcedure(check->address);
 						if(($3.idNameList)->size() != proceInfo->paraNum) {
-							
+
 						}
 						else {
 							for(int i = 0; i < ($3.idNameList)->size(); i++)
@@ -1096,9 +1096,9 @@ procedure_call_statement : ID
 									parser.yyerrok();
 								}
 							} // end of for
-							
+
 							tmp_target = string($1->data()) + "(" + string(($3.targetCode)->data()) + ");\n";
-							
+
 						} // end of else
 					} // end of outer if
 					else if(check->type == FUNCTION_T) {
@@ -1115,20 +1115,20 @@ procedure_call_statement : ID
 									parser.yyerrok();
 								}
 							} // end of for
-							
+
 							tmp_target = string($1->data()) + "(" + string(($3.targetCode)->data()) + ");\n";
-							
+
 						} // end of else
 					} // end of else if
 					else{
 						parser.yyerror("procedure_call_statement -> ID ( expr_list ) : 过程参数个数不匹配!");
 						parser.yyerrok();
 					}
-					
+
 					$$ = new string(tmp_target);
 					debug_stream << "	data() = " << ($$)->data() << endl;
 				};
-				
+
 expr_list : expr_list ',' expression
 				{
 					debug_stream<<"	YACC--expr_list->expr_list , expression"<<endl;
@@ -1145,7 +1145,7 @@ expr_list : expr_list ',' expression
 					($$.idNameList)->push_back(string(($3.targetCode)->data()));
 					($$.dataTypeList)->push_back($3.value_type);
 					($$.tableTypeList)->push_back($3.table_type);
-					// target code 
+					// target code
 					string tmp_target =  string(($1.targetCode)->data()) + ", " +  string(($3.targetCode)->data());
 					$$.targetCode = new string(tmp_target);
 					debug_stream << "	data() = " << ($$.targetCode)->data() << endl;
@@ -1160,35 +1160,23 @@ expr_list : expr_list ',' expression
 					($$.idNameList)->push_back(string(($1.targetCode)->data()));
 					($$.dataTypeList)->push_back($1.value_type);
 					($$.tableTypeList)->push_back($1.table_type);
-					// target code 
+					// target code
 					string tmp_target =  string(($1.targetCode)->data());
 					$$.targetCode = new string(tmp_target);
 					debug_stream << "	data() = " << ($$.targetCode)->data() << endl;
 				};
-				
+
 expression : simple_expr RELOP simple_expr
 				{
 					debug_stream<<"	YACC--expression->simple_expr RELOP simple_expr"<<endl;
 					$$.value_type = BOOL_T;
 					$$.table_type = VARIBLE_T;
 					string tmp_target =  string("");
-					// 检查操作数类型
-					/*
-					if(($1.table_type == PROCEDURE_T || $1.value_type == RECORD_T) || ($3.table_type == PROCEDURE_T || $3.value_type == RECORD_T))
-					{
-						parser.yyerror("expression -> simple_expr RELOP simple_expr : simple_expr cannot be procedure or record!");
-						parser.yyerrok();
-					}
-					// != 
-					if(string($2->data()) == "<>") 
-					{
-						if()
-					}
-					*/
+
 					if($1.table_type != VARIBLE_T || $3.table_type != VARIBLE_T) {
 						parser.yyerror("expression -> simple_expr RELOP simple_expr : simple_expr can only be int, real or bool!");
 						parser.yyerrok();
-					}			
+					}
 					if($1.value_type == BOOL_T && $3.value_type == BOOL_T) {
 						if(string($2->data()) == "<>") {
 							$2 = new string("!=");
@@ -1218,16 +1206,15 @@ expression : simple_expr RELOP simple_expr
 					$$.targetCode = new string(($1.targetCode)->data());
 					debug_stream << "	data() = " << ($$.targetCode)->data() << endl;
 				};
-				
+
 simple_expr : simple_expr ADDOP term
 				{
-					debug_stream<<"	YACC--expression->simple_expr ADDOP term"<<endl;
 					string tmp_target = string("");
 					$$.table_type = VARIBLE_T;
 					if($1.table_type != VARIBLE_T || $3.table_type != VARIBLE_T) {
 						parser.yyerror("simple_expr -> simple_expr ADDOP simple_expr : simple_expr can only be int, real or bool!");
 						parser.yyerrok();
-					}			
+					}
 					if(string($2->data()) == "or") {
 						$$.value_type = BOOL_T;
 						if($1.value_type != BOOL_T || $3.value_type != BOOL_T) {
@@ -1274,16 +1261,16 @@ simple_expr : simple_expr ADDOP term
 					$$.targetCode = new string(string($1->data()) +string(($2.targetCode)->data()));
 					debug_stream << "	data() = " << ($$.targetCode)->data() << endl;
 				};
-				
+
 term : term MULOP factor
 				{
 					debug_stream<<"	YACC--term->term MULOP factor"<<endl;
 					string tmp_target = string("");
-					$$.table_type = VARIBLE_T; 
+					$$.table_type = VARIBLE_T;
 					if($1.table_type != VARIBLE_T || $3.table_type != VARIBLE_T) {
 						parser.yyerror("expression -> simple_expr MULOP simple_expr : simple_expr can only be int, real or bool!!");
 						parser.yyerrok();
-					}			
+					}
 					if(string($2->data()) == "and") {
 						$$.value_type = BOOL_T;
 						if($1.value_type != BOOL_T || $3.value_type != BOOL_T) {
@@ -1344,7 +1331,7 @@ term : term MULOP factor
 					$$.targetCode = new string(($1.targetCode)->data());
 					debug_stream << "	data() = " << ($$.targetCode)->data() << endl;
 				};
-				
+
 factor : ID
 				{
 					debug_stream<<"	YACC--factor->ID"<<endl;
@@ -1390,7 +1377,7 @@ factor : ID
 				{
 					debug_stream<<"	YACC--factor->ID ( expr_list )"<<endl;
 					string tmp_target =  string("");
-					symbolTableItem* check = sym_table.get(string($1->data()));	
+					symbolTableItem* check = sym_table.get(string($1->data()));
 				    // 检查是否已经定义
 					if(check == NULL) {
 							parser.yyerror("factor -> ID ( expr_list ) : ID not defined!");
@@ -1421,7 +1408,7 @@ factor : ID
 										parser.yyerror("factor -> ID ( expr_list ) : 子函数参数类型不匹配!（如：数组变量传递给基本类型变量）");
 										parser.yyerrok();
 									}
-																		
+
 									if((*($3.dataTypeList))[i] != (funcInfo->paraType)[i]) {
 										parser.yyerror("factor -> ID ( expr_list ) : 子函数参数数据类型不匹配!（如int变量传递给bool变量）");
 										parser.yyerrok();
@@ -1430,7 +1417,7 @@ factor : ID
 								$$.value_type = funcInfo->retType;
 								$$.table_type = VARIBLE_T;
 								tmp_target = string($1->data()) + "(" + string(($3.targetCode)->data()) + ")";
-								
+
 							} // end of else
 						} // end of if
 						else if(check->type == PROCEDURE_T) {
@@ -1450,7 +1437,7 @@ factor : ID
 								$$.value_type = VOID;
 								$$.table_type = PROCEDURE_T;
 								tmp_target = string($1->data()) + "(" + string(($3.targetCode)->data()) + ")";
-								
+
 							} // end of else
 						}
 					}
@@ -1462,14 +1449,14 @@ factor : ID
 					debug_stream<<"	YACC--factor->ID [ expr_list ]"<<endl;
 					string tmp_target =  string("");
 					// 查询符号表
-					symbolTableItem* check = sym_table.get(string($1->data()));	
+					symbolTableItem* check = sym_table.get(string($1->data()));
 					// 检查是否已经定义
 					if(check == NULL) {
 							parser.yyerror("factor -> ID ( expr_list ) : ID not defined!");
 							parser.yyerrok();
 					}
 					else {
-						// 检查id是否数组类型 
+						// 检查id是否数组类型
 						if(check->type != ARRAY_T) {
 							parser.yyerror("factor -> id [ expression ] : id is not an array!");
 							parser.yyerrok();
@@ -1535,7 +1522,7 @@ factor : ID
 					$$.targetCode = new string("false");
 					debug_stream << "	data() = " << ($$.targetCode)->data() << endl;
 				};
-				
+
 sign : '+'
 				{
 					debug_stream<<"	YACC--sign->+"<<endl;
@@ -1548,7 +1535,7 @@ sign : '+'
 					$$ = new string("-");
 					debug_stream << "	data() = " << ($$)->data() << endl;
 				};
-				
+
 %%
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1556,18 +1543,18 @@ sign : '+'
 
 int main(void)
 {
-	
+
 	int n = 1;
 	/*
 	string sourceFile;
 	string targetFile;
-	
+
 	// 读入PASCAL源文件
 	cout<<"请输入pascal的源文件名:";
 	cin>>sourceFile;
 	in_stream.open(sourceFile.data());
 	lexer.yyin=&in_stream;//把读入文件名赋予词法分析
-	if(!in_stream) 
+	if(!in_stream)
 	{
 		printf("pascal的源文件打开失败！\n");
 	    return 0;
@@ -1631,4 +1618,4 @@ void Parser::yyerror(const char *s)
 {
 	cerr<<"ERROR - line "<<lexer.yylineno<<": "<<s<<endl;
 	error_stream << "ERROR - line " << lexer.yylineno << ": " << s << endl;
-}  
+}
