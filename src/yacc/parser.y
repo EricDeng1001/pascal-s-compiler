@@ -211,8 +211,8 @@ declaration: declaration ';' identifier_list ':' type
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
-								parser.yyerror("declaration -> declaration ; identifier_list : type : redefined array Identifier in identifier_list!");
-								parser.yyerrok;
+								yyerror("declaration -> declaration ; identifier_list : type : redefined array Identifier in identifier_list!");
+								yyerrok;
 							}
 							else {	// 生成目标代码
 								string target = to_string($3.array_top - $3.array_bottom  + 1);
@@ -241,8 +241,8 @@ type: standard_type
 					$$.array_top = (int)($6.num);
 					$$.array_bottom = (int)($3.num);
 					if($$.array_top - $$.array_bottom < 0) {
-						parser.yyerror("type -> ARRAY [ NUM . . NUM ] OF standard_type : 数组下界不可小于上界!");
-						parser.yyerrok;
+						yyerror("type -> ARRAY [ NUM . . NUM ] OF standard_type : 数组下界不可小于上界!");
+						yyerrok;
 					}
 					$$.targetCode = $9.targetCode;
 				};
