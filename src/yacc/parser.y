@@ -146,7 +146,7 @@ declaration: declaration ';' identifier_list ':' type
 						string tmp_target = $5->targetCode;
 						for(int i = 0; i < ($3.names)->size(); i++) {
 
-							Symbol sym((*($3.names))[i], $5->type, yylineno);
+							Symbol sym((*($3.names))[i], *($5.type), yylineno);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
@@ -165,7 +165,7 @@ declaration: declaration ';' identifier_list ':' type
 					{
 						string tmp_target = $5->targetCode;
 						for(int i = 0; i < ($3.names)->size(); i++) {
-							Symbol sym((*($3.names))[i], $5->type, yylineno);
+							Symbol sym((*($3.names))[i], *($5.type), yylineno);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
@@ -189,7 +189,7 @@ declaration: declaration ';' identifier_list ':' type
 					if(($3.type)->dimension == 0) {
 						string tmp_target = string(($3.targetCode)->data());
 						for(int i = 0; i < ($1.names)->size(); i++) {
-							Symbol sym((*($1.names))[i], $3->type, yylineno);
+							Symbol sym((*($1.names))[i], *($3.type), yylineno);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
@@ -208,7 +208,7 @@ declaration: declaration ';' identifier_list ':' type
 					{
 						string tmp_target = string(($3.targetCode)->data());
 						for(int i = 0; i < ($1.names)->size(); i++) {
-							Symbol sym((*($1.names))[i], $3->type, yylineno);
+							Symbol sym((*($1.names))[i], *($3.type), yylineno);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
@@ -906,11 +906,11 @@ factor: ID
 
 sign: '+'
 				{
-
+					$$ = new string("+");
 				}
 				| '-'
 				{
-
+					$$ = new string("-");
 				};
 
 %%
