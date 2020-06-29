@@ -89,15 +89,13 @@ SymbolTable sym_table;
 
 program: program_head program_body '.'
 				{
-					string tmp_target = string($1->data()) + string($2->data());
-					$$ = new string(tmp_target);
-					cout << string($$->data());
+					$$ = new string(*$1 + *$2);
+					cout << *$$;
 				}
         | program_head program_body error
 				{
-					string tmp_target = string($1->data()) + string($2->data());
-					$$ = new string(tmp_target);
-					cout << string($$->data());
+					$$ = new string(*$1 + *$2);
+					cout << *$$;
 					yyerror("program -> program_head program_body . : missing '.'at the end of the program.");
 					yyerrok();
 				};
@@ -131,8 +129,7 @@ program_body: declarations subprogram_declarations compound_statement
 
 declarations: VAR declaration ';'
 				{
-					string tmp_target = string($2->data());
-					$$ = new string(tmp_target);
+					$$ = $2;
 				}
 				|
 				{
@@ -143,12 +140,10 @@ declaration: declaration ';' identifier_list ':' type
 				{
 					//使用dimension来判断是否为数组
 					if(($5.type)->dimension == 0) {
-						string tmp_target = string(($5.targetCode)->data());
+						string tmp_target = $5->targetCode;
 						for(int i = 0; i < ($3.names)->size(); i++) {
 
-							struct Symbol sym;
-							sym.type = $5->type;
-							sym.name = (*($3.names))[i];
+							Symbol sym((*($3.names))[i], $5->type, yylineno);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
@@ -162,14 +157,12 @@ declaration: declaration ';' identifier_list ':' type
 									tmp_target += " " + (*($3.names))[i] + ";\n";
 							}
 						}
-						$$ = new string(string(($1)->data()) + tmp_target);
+						$$ = new string(*$1 + tmp_target);
 					}else if(($5.type)->dimension > 0)
 					{
-						string tmp_target = string(($5.targetCode)->data());
+						string tmp_target = $5->targetCode;
 						for(int i = 0; i < ($3.names)->size(); i++) {
-							struct Symbol sym;
-							sym.type = $5->type;
-							sym.name = (*($3.names))[i];
+							Symbol sym((*($3.names))[i], $5->type, yylineno);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
@@ -177,18 +170,14 @@ declaration: declaration ';' identifier_list ':' type
 								parser.yyerrok();
 							}
 							else {	// 生成目标代码
-								int array_range = $5.array_top - $5.array_bottom  + 1;
-								stringstream ss; 
-								string target;
-								ss << array_range;
-								ss >> target;
+								string target = to_string($5.array_top - $5.array_bottom  + 1);
 								if(i != ($3.idNameList)->size() - 1)
 									tmp_target += " " + (*($3.names))[i] + "[" + target + "],";
 								else
 									tmp_target += " " + (*($3.names))[i] + "[" + target + "];\n";
 							}
 						}
-						$$ = new string(string(($1)->data()) + tmp_target);
+						$$ = new string(*$1 + tmp_target);
 					}
 				}
 				| identifier_list ':' type
@@ -197,10 +186,7 @@ declaration: declaration ';' identifier_list ':' type
 					if(($3.type)->dimension == 0) {
 						string tmp_target = string(($3.targetCode)->data());
 						for(int i = 0; i < ($1.names)->size(); i++) {
-
-							struct Symbol sym;
-							sym.type = $3->type;
-							sym.name = (*($1.names))[i];
+							Symbol sym((*($1.names))[i], $3->type, yylineno);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
@@ -219,9 +205,7 @@ declaration: declaration ';' identifier_list ':' type
 					{
 						string tmp_target = string(($3.targetCode)->data());
 						for(int i = 0; i < ($1.names)->size(); i++) {
-							struct Symbol sym;
-							sym.type = $3->type;
-							sym.name = (*($1.names))[i];
+							Symbol sym((*($1.names))[i], $3->type, yylineno);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
@@ -229,11 +213,7 @@ declaration: declaration ';' identifier_list ':' type
 								parser.yyerrok();
 							}
 							else {	// 生成目标代码
-								int array_range = $3.array_top - $3.array_bottom  + 1;
-								stringstream ss; 
-								string target;
-								ss << array_range;
-								ss >> target;
+								string target = to_string($5.array_top - $5.array_bottom  + 1);
 								if(i != ($1.idNameList)->size() - 1)
 									tmp_target += " " + (*($1.names))[i] + "[" + target + "],";
 								else
@@ -243,31 +223,51 @@ declaration: declaration ';' identifier_list ':' type
 						$$ = new string(tmp_target);	
 					}
 				};
-
+struct
+	{
+		Type *type;
+		int arrayTop;
+		int arrayBottom;
+		string *targetCode;
+	} typeStruct;
 type: standard_type
 				{
-
+					$$.type = $1.type;
+					$$.targetCode = $1.targetCode;
 				}
 				| ARRAY '[' NUM '.' '.' NUM ']' OF standard_type
 				{
-
-				}
-				| RECORD declaration END
-				{
-
+					if($3.type != BasicType::INTEGER || $6.type != BasicType::INTEGER) {
+						parser.yyerror("type -> ARRAY [ NUM . . NUM ] OF standard_type : 数组参数NUM类型错误!");		/////////////////////////////////////////////////////// 现在
+						parser.yyerrok();
+					} 
+					$$.type = $9.type;
+					$$.array_top = (int)($6.num);
+					$$.array_bottom = (int)($3.num);
+					if($$.array_top - $$.array_bottom < 0) {
+						parser.yyerror("type -> ARRAY [ NUM . . NUM ] OF standard_type : 数组下界不可小于上界!");
+						parser.yyerrok();
+					}
+					$$.targetCode = $9.targetCode;
 				};
 
 standard_type: INTEGER
 				{
-
+					$$.type = new Type;
+					$$->type.type = BasicType::INTEGER;
+					$$.targetCode = new string("int");
 				}
 				| REAL
 				{
-
+					$$.type = new Type;
+					$$->type.type = BasicType::REAL;
+					$$.targetCode = new string("double");
 				}
 				| BOOLEAN
 				{
-
+					$$.type = new Type;
+					$$->type.type = BasicType::BOOLEAN;
+					$$.targetCode = new string("bool");
 				};
 
 subprogram_declarations : subprogram_declarations subprogram_declaration ';'
