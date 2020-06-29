@@ -29,13 +29,13 @@ namespace PascalSToCPP
 
     /**
      * @brief 将给出的枚举值转换为整数
-     * 
-     * @tparam EnumType 
-     * @param enum_val 
-     * @return int 
+     *
+     * @tparam EnumType
+     * @param enum_val
+     * @return int
      */
     template <typename EnumType>
-    inline constexpr int EnumToInt(const EnumType enum_val) noexcept 
+    inline constexpr int EnumToInt(const EnumType enum_val) noexcept
     {
         static_assert(std::is_enum<EnumType>::value, "EnumType 必须为枚举类型");
         return static_cast<int>(enum_val);
@@ -52,7 +52,6 @@ namespace PascalSToCPP
                    std::equal(args.begin(), args.end(), rhs.args.begin(), rhs.args.end()) &&
                    ret_type == rhs.ret_type;
         }
-
 
         bool operator!=(const Type &rhs) const
         {
@@ -131,7 +130,7 @@ namespace PascalSToCPP
 
         // 判断该符号是否已定义但未使用
         bool isDefButNotUsed() const noexcept { return def_at != kHasNoDefAt && ref_at.empty(); }
-        
+
         // 添加引用该符号的行数
         void addRefAt(const std::size_t line_no) { ref_at.insert(line_no); }
 
@@ -181,7 +180,7 @@ namespace PascalSToCPP
         std::size_t def_at_{Symbol::kHasNoDefAt};
         Type type_;
     };
-    
+
     inline SymbolBuilder Symbol::getSymbolBuilder() { return SymbolBuilder(); }
 
     class SymbolTable
@@ -199,10 +198,10 @@ namespace PascalSToCPP
         const Symbol &getSymbol(const int symbol_ind) const;
 
         // 如果当前作用域不为全局作用域, 返回其父作用域对应的符号
-        const Symbol &getParentSymbol() const
+        const Symbol *const getParentSymbol() const
         {
             assert(!isInGlobalScope());
-            return getSymbolGlobal(scope_ind_);
+            return &getSymbolGlobal(scope_ind_);
         }
 
         // 返回当前作用域是否为全局作用域
@@ -587,7 +586,7 @@ namespace PascalSToCPP
         std::copy_if(global_symbols_.begin(), global_symbols_.end(), std::back_inserter(res)
             ,[](const auto &i){ return i.isDefButNotUsed(); });
         for (const auto &local_symbols : local_symbols_)
-            std::copy_if(local_symbols.begin(), local_symbols.end(), std::back_inserter(res), 
+            std::copy_if(local_symbols.begin(), local_symbols.end(), std::back_inserter(res),
                 [](const auto &i){ return i.isDefButNotUsed(); });
         return res;
     }
@@ -601,7 +600,7 @@ namespace PascalSToCPP
         for (const auto &local_symbols : local_symbols_)
             for (const auto &local_symbol : local_symbols)
                 if (local_symbol.isDefButNotUsed())
-                    res.emplace_back(local_symbol.name, local_symbol.def_at);        
+                    res.emplace_back(local_symbol.name, local_symbol.def_at);
         return res;
     }
 } // namespace PascalSToCPP

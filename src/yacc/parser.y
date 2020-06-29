@@ -37,9 +37,9 @@ SymbolTable sym_table;
 
 	struct
 	{
-		vector <string>* names;
-	    vector <Type>* types;
-	    string* targetCode;
+		vector<string>* names;
+	  vector<Type>* types;
+	  string* targetCode;
 	} exprList;
 
 	struct
@@ -89,15 +89,17 @@ SymbolTable sym_table;
 
 program: program_head program_body '.'
 				{
-					$$ = new string(*$1 + *$2);
-					cout << *$$;
+					string tmp_target = *($1) + *($2);
+					$$ = new string(tmp_target);
+					cout << *($$);
 				}
         | program_head program_body error
 				{
-					$$ = new string(*$1 + *$2);
-					cout << *$$;
+					string tmp_target = *($1) + *($2);
+					$$ = new string(tmp_target);
+					cout << *($$);
 					yyerror("program -> program_head program_body . : missing '.'at the end of the program.");
-					yyerrok();
+					yyerrok;
 				};
 
 program_head: PROGRAM ID '(' INPUT ',' OUTPUT ')' ';'
@@ -108,22 +110,23 @@ program_head: PROGRAM ID '(' INPUT ',' OUTPUT ')' ';'
 identifier_list: identifier_list ',' ID
 				{
 					// 记录已经录入的参数
-					$$.names = new vector <string>;
-					for(int i = 0; i < ($1.names)->size(); i++) {
-						($$.names)->push_back((*($1.names))[i]);
-					}
+					$$.names = new vector<string>(*($1.names));
 					// 记录新的id
-					($$.names)->push_back(string($3->data()));
+					($$.names)->push_back(*($3));
 				}
 				| ID
 				{
-					$$.names = new vector <string>;
-					($$.names)->push_back(string($1->data()));
+					$$.names = new vector<string>();
+					($$.names)->push_back(*($1));
 				};
 
 program_body: declarations subprogram_declarations compound_statement
 				{
-					string tmp_target = string($1->data()) + string($2->data()) + "\n" + "int main()\n{\n" + string($3->data()) + "\nreturn 0;\n}\n";
+					string tmp_target = *($1) + "\n" + 
+										*($2) + "\n" +
+										"int main()\n{\n" + 
+										*($3) + "\n" +
+										"return 0;\n}\n";
 					$$ = new string(tmp_target);
 				};
 
@@ -148,7 +151,7 @@ declaration: declaration ';' identifier_list ':' type
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
 								yyerror("declaration -> declaration ; identifier_list : type : redefined varible Identifier in identifier_list!");
-								yyerrok();
+								yyerrok;
 							}
 							else {	// 生成目标代码
 								if(i != ($3.names)->size() - 1)
@@ -167,11 +170,11 @@ declaration: declaration ';' identifier_list ':' type
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
 								parser.yyerror("declaration -> declaration ; identifier_list : type : redefined array Identifier in identifier_list!");
-								parser.yyerrok();
+								parser.yyerrok;
 							}
 							else {	// 生成目标代码
 								string target = to_string($5.array_top - $5.array_bottom  + 1);
-								if(i != ($3.idNameList)->size() - 1)
+								if(i != ($3.names)->size() - 1)
 									tmp_target += " " + (*($3.names))[i] + "[" + target + "],";
 								else
 									tmp_target += " " + (*($3.names))[i] + "[" + target + "];\n";
@@ -191,7 +194,7 @@ declaration: declaration ';' identifier_list ':' type
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
 								yyerror("declaration -> declaration ; identifier_list : type : redefined varible Identifier in identifier_list!");
-								yyerrok();
+								yyerrok;
 							}
 							else {	// 生成目标代码
 								if(i != ($1.names)->size() - 1)
@@ -210,17 +213,17 @@ declaration: declaration ';' identifier_list ':' type
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
 								parser.yyerror("declaration -> declaration ; identifier_list : type : redefined array Identifier in identifier_list!");
-								parser.yyerrok();
+								parser.yyerrok;
 							}
 							else {	// 生成目标代码
-								string target = to_string($5.array_top - $5.array_bottom  + 1);
-								if(i != ($1.idNameList)->size() - 1)
+								string target = to_string($3.array_top - $3.array_bottom  + 1);
+								if(i != ($1.names)->size() - 1)
 									tmp_target += " " + (*($1.names))[i] + "[" + target + "],";
 								else
 									tmp_target += " " + (*($1.names))[i] + "[" + target + "];\n";
 							}
 						}
-						$$ = new string(tmp_target);	
+						$$ = new string(tmp_target);
 					}
 				};
 struct
@@ -270,7 +273,7 @@ standard_type: INTEGER
 					$$.targetCode = new string("bool");
 				};
 
-subprogram_declarations : subprogram_declarations subprogram_declaration ';'
+subprogram_declarations: subprogram_declarations subprogram_declaration ';'
 				{
 					string temp = string($1->data()) + "\n" + string($2->data());
 					$$ = new string(temp);
@@ -280,14 +283,14 @@ subprogram_declarations : subprogram_declarations subprogram_declaration ';'
 					$$ = new string("");
 				};
 
-subprogram_declaration : subprogram_head declarations compound_statement
+subprogram_declaration: subprogram_head declarations compound_statement
 				{
 					string temp = string($1->data()) + "\n" + string($2->data()) + "\n" + string($3->data()) + "\n}\n";
 					$$ = new string(temp);
 					//TODO重定向
 				};
 
-subprogram_head : FUNCTION ID arguments ':' standard_type ';'
+subprogram_head: FUNCTION ID arguments ':' standard_type ';'
 				{
 
 
@@ -305,7 +308,7 @@ subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 				};
 
 
-arguments : '(' parameter_lists ')'
+arguments: '(' parameter_lists ')'
 				{
 					$$.paraType = new vector <DATA_TYPE>;
 					for(int i = 0; i < ($2.paraType)->size(); i++)
@@ -321,9 +324,8 @@ arguments : '(' parameter_lists ')'
 					$$.targetCode = new string(temp);
 				};
 
-parameter_lists : parameter_lists ';' parameter_list
+parameter_lists: parameter_lists ';' parameter_list
 				{
-					// TODO 检查顺序是否正确
 					$$.targetCode = new string($1.targetCode);
 					$$.targetCode.push_back(','); // 分隔两个参数列表
 					$$.targetCode.append(*($3.targetCode));
@@ -336,7 +338,7 @@ parameter_lists : parameter_lists ';' parameter_list
 					$$.paraTypeAndNames = new vector<pair<Type, vector<string>>>($1.paraTypeAndNames);
 				};
 
-parameter_list : VAR identifier_list ':' type
+parameter_list: VAR identifier_list ':' type
 				{
 					// 填写参数表
 					Type &temp_type = *($4.type);
@@ -389,36 +391,36 @@ parameter_list : VAR identifier_list ':' type
 					$$.targetCode->pop_back(); // 将最后一个逗号弹出
 				};
 
-compound_statement : BEGIN optional_statements END
+compound_statement: BEGIN optional_statements END
 				{
 					string temp_code;
 					temp_code.append("{\n")
-							 .append(*($2.targetCode))
+							 .append(*($2))
 							 .append("\n}\n");
-					// $$.targetCode = new string(move(temp_code));
-					$$.targetCode = new string(temp_code);
+					// $$ = new string(move(temp_code));
+					$$ = new string(temp_code);
 				};
 
-optional_statements : statement_list
+optional_statements: statement_list
 				{
-					$$.targetCode = new string(*($1.targetCode));
+					$$ = new string(*($1));
 				}
 				|
 				{
-					$$.targetCode = new string("");
+					$$ = new string("");
 				};
 
-statement_list : statement_list ';' statement
+statement_list: statement_list ';' statement
 				{
-					$$.targetCode = new string(*($1.targetCode));
-					$$.targetCode->append(*($2.targetCode) + "\n");
+					$$ = new string(*($1));
+					$$->append(*($2) + "\n");
 				}
 				| statement
 				{
-					$$.targetCode = new string(*($1.targetCode) + "\n");
+					$$ = new string(*($1) + "\n");
 				};
 
-statement : variable ASSIGNOP expression
+statement: variable ASSIGNOP expression
 				{
 					Type lhs_type, rhs_type;
 					bool is_return{false};
@@ -430,10 +432,11 @@ statement : variable ASSIGNOP expression
 					else
 						lhs_type = $1.type->type;
 					rhs_type = $3.type->type;
-					
+
 					if (lhs_type != rhs_type)
 					{
-						// TODO 类型错误处理
+						yyerror("赋值语句两边的类型不相等");
+						yyerrok;
 					}
 
 					string temp_code;
@@ -450,73 +453,201 @@ statement : variable ASSIGNOP expression
 								 .append(*($3.targetCode));
 					}
 
-					// $$.targetCode = new string(move(temp_code));
-					$$.targetCode = new string(temp_code);
+					// $$ = new string(move(temp_code));
+					$$ = new string(temp_code);
 				}
 				| procedure_call_statement
 				{
-					$$.targetCode = new string(*($1.targetCode) + ";");
+					$$ = new string(*($1) + ";");
 				}
 				| compound_statement
 				{
-					$$.targetCode = new string(*($1.targetCode) + ";");
+					$$ = new string(*($1) + ";");
 				}
-					struct
-	{
-		Type *type;
-		string* targetCode;
-	}expStruct;
 				| IF expression THEN statement
 				{
 					Type expr_type = $2.type->type;
 					if (expr_type.type != BasicType::BOOLEAN)
-					
+					{
+						yyerror("if 后的表达式必须为布尔表达式");
+						yyerrok;
+					}
+
+					string temp_code;
+					temp_code.append(string("if (") + *($2.targetCode) + ") ")
+							 .append("{\n")
+							 .append(*($4))
+							 .append("\n}\n");
 				}
 				| IF expression THEN statement ELSE statement
 				{
+					Type expr_type = $2.type->type;
+					if (expr_type.type != BasicType::BOOLEAN)
+					{
+						yyerror("if 后的表达式必须为布尔表达式");
+						yyerrok;
+					}
 
+					string temp_code;
+					temp_code.append(string("if (") + *($2.targetCode) + ") ")
+							 .append("{\n")
+							 .append(*($4) + "\n")
+							 .append("}\n")
+							 .append("else {\n")
+							 .append(*($6) + "\n")
+							 .append("}\n");
 				}
 				| WHILE expression DO statement
 				{
+					Type expr_type = $2.type->type;
+					if (expr_type.type != BasicType::BOOLEAN)
+					{
+						yyerror("while 后的表达式必须为布尔表达式");
+						yyerrok;
+					}
 
+					string temp_code;
+					temp_code.append(string("while (") + *($2.targetCode) + ") ")
+							 .append("{\n")
+							 .append(*($4) + "\n")
+							 .append("}\n");
 				}
 				| READ '(' identifier_list ')'
 				{
-
+					string temp_code("cin");
+					for (const auto &name : *($3.names))
+						temp_code.append(" >> ")
+								 .append(name);
+					$$ = new string(temp_code);
 				}
 				| WRITE '(' expr_list ')'
 				{
+					string temp_code("cout");
+					for (int i = 0; i < $3.types->size(); i++)
+					{
+						if ($3.types[i] == BasicType::VOID)
+						{
+							yyerror("write 中的表达式的值不能为空");
+							yyerrok;
+							// TODO 错误处理, 表达式不能为空
+						}
+					}
 
+					for (const auto &name : *($3.names))
+						temp_code.append(" >> ")
+								 .append(name);
 				};
 
-variable : ID
+variable: ID
 				{
-
+          Symbol* symbol = sym_table.getSymbol(*($1));
+          if (symbol == nullptr) {
+            yyerror("id not defined!");
+            yyerrok;
+          } else if (symbol->type.isCallable()) {
+            if (*($1) == sym_table.getParentSymbol()->name) {
+              if (symbol->type.ret_type == BasicType::VOID) {
+                yyerror("could not return");
+                yyerrok;
+              } else {
+                $$.type = new Type(symbol->type);
+              }
+            } else {
+                yyerror("return id wrong");
+                yyerrok;
+            }
+          } else if (symbol->type.isArray()) {
+            yyerror("can not assign array");
+            yyerrok;
+          }
+          else {
+            $$.type = new Type(symbol->type);
+            $$.targetCode = new string(*($1));
+          }
 				}
 				| ID '[' expression ']'
 				{
-
+          Symbol* symbol = sym_table.getSymbol(*($1));
+          if (symbol == nullptr) {
+            yyerror("id not defined");
+            yyerrok;
+          } else if (!symbol->type.isArray()) {
+            yyerror("id must be an array");
+            yyerrok;
+          } else {
+            if ($3.type->type != BasicType::INTEGER) {
+              yyerror("引用必须是整数");
+              yyerrok;
+            } else {
+              $$.type = new Type(symbol->type);
+              $$.targetCode = new string(*($1) + "[" +  *($3.targetCode) + "]");
+            }
+          }
 				};
 
-procedure_call_statement : ID
+procedure_call_statement: ID
 				{
-
+          Symbol* symbol = sym_table.getSymbol(*($1));
+          if (symbol == nullptr) {
+            yyerror("id not defined");
+            yyerrok;
+          } else {
+            if (symbol->type.isCallable()) {
+              $$ = new string(*($1) + "();\n");
+            } else {
+              $$ = new string(*($1) + ";\n");
+            }
+          }
 				}
 				| ID '(' expr_list ')'
 				{
-
+          Symbol* symbol = sym_table.getSymbol(*($1));
+          if (symbol == nullptr) {
+            yyerror("id not defined");
+            yyerrok;
+          } else {
+            if (!symbol->type.isCallable()) {
+              yyerror("id is not callable");
+              yyerrok;
+            } else {
+              if (symbol->type.dimension != $3.names->size()) {
+                yyerror("参数个数不匹配");
+                yyerrok;
+              } else {
+                for (int i = 0; i < $3.types->size(); i++) {
+                  if ((*($3.types))[i] != symbol->args[i]) {
+                    yyerror(string("第") + string(i) + "个参数类型不匹配");
+                    yyerrok;
+                  }
+                }
+                $$ = new string(*($1) + "(" + *($3.targetCode) + ");\n");
+              }
+            }
+          }
 				};
 
-expr_list : expr_list ',' expression
+expr_list: expr_list ',' expression
 				{
-
+          $$.names = new vector<string>();
+          $$.types = new vector<Type>();
+          for (int i = 0; i < $1.names->size(); i++) {
+            $$.names->push_back((*($1.names))[i]);
+            $$.types->push_back((*($1.types))[i]);
+          }
+          $$.names->push_back(string($3.targetCode->data()));
+          $$.types->push_back($3.type);
+          $$.targetCode = new string(*($1.targetCode) + ", " + *($3.targetCode));
 				}
 				| expression
 				{
-
+          $$.names = new vector<string>();
+          $$.types = new vector<Type>();
+          $$.names->push_back(string($1.targetCode->data()));
+          $$.types->push_back($1.type);
+          $$.targetCode = new string(*($1.targetCode));
 				};
 
-expression : simple_expr RELOP simple_expr
+expression: simple_expr RELOP simple_expr
 				{
 
 				}
@@ -525,7 +656,7 @@ expression : simple_expr RELOP simple_expr
 
 				};
 
-simple_expr : simple_expr ADDOP term
+simple_expr: simple_expr ADDOP term
 				{
 
 				}
@@ -538,7 +669,7 @@ simple_expr : simple_expr ADDOP term
 
 				};
 
-term : term MULOP factor
+term: term MULOP factor
 				{
 
 				}
@@ -547,7 +678,7 @@ term : term MULOP factor
 
 				};
 
-factor : ID
+factor: ID
 				{
 
 				}
@@ -580,7 +711,7 @@ factor : ID
 
 				};
 
-sign : '+'
+sign: '+'
 				{
 
 				}
