@@ -370,29 +370,57 @@ statement_list : statement_list ';' statement
 	}expStruct;
 statement : variable ASSIGNOP expression
 				{
-					// expression.type 已经是表达式运算最终的结果
-					optional<Type> lhs_type{nullopt};
-					Type rhs_type = $3.type->type;
-
+					Type lhs_type, rhs_type;
+					bool is_return{false};
 					if ($1.type->type == BasicType::CALLABLE)
+					{
 						lhs_type = $1.type->ret_type;
+						is_return = true;
+					}
 					else
 						lhs_type = $1.type->type;
-
+					rhs_type = $3.type->type;
 					
+					if (lhs_type != rhs_type)
+					{
+						// TODO 类型错误处理
+					}
 
+					string temp_code;
+					if (is_return)
+					{
+						temp_code.append("return ")
+								 .append(*($3.targetCode))
+								 .append(";");
+					}
+					else
+					{
+						temp_code.append(*($1.targetCode))
+								 .append(" = ")
+								 .append(*($3.targetCode));
+					}
+
+					// $$.targetCode = new string(move(temp_code));
+					$$.targetCode = new string(temp_code);
 				}
 				| procedure_call_statement
 				{
-
+					$$.targetCode = new string(*($1.targetCode) + ";");
 				}
 				| compound_statement
 				{
-
+					$$.targetCode = new string(*($1.targetCode) + ";");
 				}
+					struct
+	{
+		Type *type;
+		string* targetCode;
+	}expStruct;
 				| IF expression THEN statement
 				{
-
+					Type expr_type = $2.type->type;
+					if (expr_type.type != BasicType::BOOLEAN)
+					
 				}
 				| IF expression THEN statement ELSE statement
 				{
