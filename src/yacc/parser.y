@@ -273,7 +273,7 @@ standard_type: INTEGER
 
 subprogram_declarations: subprogram_declarations subprogram_declaration ';'
 				{
-					string temp = string($1->data()) + "\n" + string($2->data());
+					string temp = *($1) + "\n" + *($2);
 					$$ = new string(temp);
 				}
 				|
@@ -283,43 +283,146 @@ subprogram_declarations: subprogram_declarations subprogram_declaration ';'
 
 subprogram_declaration: subprogram_head declarations compound_statement
 				{
-					string temp = string($1->data()) + "\n" + string($2->data()) + "\n" + string($3->data()) + "\n}\n";
+					string temp = *($1) + "\n" + 
+								  *($2) + "\n" + 
+								  *($3) + "\n" + 
+								  "}\n";
 					$$ = new string(temp);
-					//TODO重定向
+					if (!symbol_table.ExitScope())
+					{
+						// TODO 错误处理, 退出作用域失败
+					}
 				};
 
 subprogram_head: FUNCTION ID arguments ':' standard_type ';'
 				{
+					// 检查函数名是否重复
+					if (sym_table.isInScope(*($2)))
+					{
+						// TODO 错误处理, ID重复定义
+					}
 
+					SymbolBuilder func_builder = Symbol.getSymbolBuilder();
+					func_builder.addName(*($2))
+						   		.setRetType($5.type->type)
+								.setDefAt(yylineno)
 
+					int dimension = 0;
+					for (const auto &[type, names] : *($3.paraTypeAndNames))
+					{
+						func_builder.addArg(type);
+						dimension += names.size();
+					}
+					func_builder.setDimension(dimension);
+					Symbol func_symbol;
+					if (!sym_table.InsertSymbol(func_symbol).first)
+					{
+						// TODO 错误处理, 插入失败
+					}
+
+					// 向符号表中添加参数
+					if (!sym_table.EnterScope(func_symbol.name))
+					{
+						// TODO 错误处理, 进入子作用域失败
+					}
+
+					for (const auto &[type, names] : *($3.paraTypeAndNames))
+					{
+						// 检查名字是否冲突
+						SymbolBuilder params_builder = Symbol.getSymbolBuilder();
+						params_builder.addType(type).setDefAt(yylineno);
+						for (const auto &name : names)
+						{
+							if (sym_table.isInScope() || name == func_symbol.name)
+							{
+								// TODO 错误处理, 名字重复或者与函数名称相同
+							}
+							auto temp_builder = params_builder;
+							temp_builder.addName(name);
+							sym_table.InsertSymbol(temp_builder.build());
+						}
+					}
+
+					string temp_code = *($5.targetCode) + " " + *($2) + *($3.targetCode);
+					$$ = new string(temp_code);
 				}
 				| FUNCTION ID arguments error
 				{
+					// TODO 错误信息输出
+					string temp_code = string("void ") + *($2) + *($3.targetCode);
+					$$ = new string(temp_code);
 				}
 				| PROCEDURE ID arguments ';'
 				{
+					// 检查函数名是否重复
+					if (sym_table.isInScope(*($2)))
+					{
+						// TODO 错误处理, ID重复定义
+					}
 
+					SymbolBuilder func_builder = Symbol.getSymbolBuilder();
+					func_builder.addName(*($2))
+								.setDefAt(yylineno)
+
+					int dimension = 0;
+					for (const auto &[type, names] : *($3.paraTypeAndNames))
+					{
+						func_builder.addArg(type);
+						dimension += names.size();
+					}
+					func_builder.setDimension(dimension);
+					Symbol func_symbol;
+					if (!sym_table.InsertSymbol(func_symbol).first)
+					{
+						// TODO 错误处理, 插入失败
+					}
+
+					// 向符号表中添加参数
+					if (!sym_table.EnterScope(func_symbol.name))
+					{
+						// TODO 错误处理, 进入子作用域失败
+					}
+
+					for (const auto &[type, names] : *($3.paraTypeAndNames))
+					{
+						// 检查名字是否冲突
+						SymbolBuilder params_builder = Symbol.getSymbolBuilder();
+						params_builder.addType(type).setDefAt(yylineno);
+						for (const auto &name : names)
+						{
+							if (sym_table.isInScope() || name == func_symbol.name)
+							{
+								// TODO 错误处理, 名字重复或者与函数名称相同
+							}
+							auto temp_builder = params_builder;
+							temp_builder.addName(name);
+							sym_table.InsertSymbol(temp_builder.build());
+						}
+					}
+
+					string temp_code = *($5.targetCode) + " " + *($2) + *($3.targetCode);
+					$$ = new string(temp_code);
 				}
 				| PROCEDURE ID arguments error ';'
 				{
-
+					// TODO 错误信息输出
+					string temp_code = string("void ") + *($2) + *($3.targetCode);
+					$$ = new string(temp_code);
 				};
 
 
 arguments: '(' parameter_lists ')'
 				{
-					$$.paraType = new vector <DATA_TYPE>;
-					for(int i = 0; i < ($2.paraType)->size(); i++)
-					{
-						($$.paraType)->push_back((*($2.paraType))[i]);
-					}
-					string temp = "(" + string(($2.targetCode)->data()) + ")";
-					$$.targetCode = new string(temp);
+					$$.paraTypeAndNames = 
+						new vector<pair<Type, vector<string>>>(*($2.paraTypeAndNames));
+					$$.targetCode = new string("(");
+					$$.targetCode->append(*($2.targetCode))
+								 ->append(")");
 				}
 				|
 				{
-					string temp = "()";
-					$$.targetCode = new string(temp);
+					$$.paraTypeAndNames = new vector<pair<Type, vector<string>>>();
+					$$.targetCode = new string("()");
 				};
 
 parameter_lists: parameter_lists ';' parameter_list
