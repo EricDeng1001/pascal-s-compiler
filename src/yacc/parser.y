@@ -19,25 +19,25 @@ SymbolTable sym_table;
 
 %union
 {
-	string* targetCode;
+	string *targetCode;
 
 	struct
 	{
 		double num;
 		Type type;
-	    string* targetCode;
+	    string *targetCode;
 	} targetDigitCode;
 
 	struct
 	{
-		vector <string>* names;
+		vector<string> *names;
 	} idList;
 
 	struct
 	{
-		vector <string>* names;
-	    vector <Type>* types;
-	    string* targetCode;
+		vector<string> *names;
+	    vector<Type> *types;
+	    string *targetCode;
 	} exprList;
 
 	struct
@@ -45,21 +45,20 @@ SymbolTable sym_table;
 		Type type;
 		int arrayTop;
 		int arrayBottom;
-		string* targetCode;
+		string *targetCode;
 	} typeStruct;
 
 	struct
 	{
-		vector <Type>* paraType;
-		string* targetCode;
+		vector<pair<Type, vector<string>>> *paraTypeAndNames;
+		string *targetCode;
 	} parameterStruct;
 
 	struct
 	{
 		Type type;
-		string* targetCode;
+		string *targetCode;
 	}expStruct;
-
 }
 
 %token <targetCode> PROGRAM VAR ARRAY OF RECORD INTEGER REAL BOOLEAN FUNCTION PROCEDURE  DO
@@ -208,18 +207,66 @@ parameter_lists : parameter_lists ';' parameter_list
 
 				};
 
+	struct
+	{
+		vector<pair<Type, vector<string>>> *paraTypeAndNames;
+		string *targetCode;
+	} parameterStruct;
+
+	struct
+	{
+		vector<string> *names;
+	} idList;
+
+	struct
+	{
+		Type type;
+		int arrayTop;
+		int arrayBottom;
+		string *targetCode;
+	} typeStruct;
 parameter_list : VAR identifier_list ':' type
 				{
+					// 填写参数表
+					Type &temp_type = *($4.type);
+					temp_type.is_ref = true;
 
+					$$.paraTypeAndNames = new vector<pair<Type, vector<string>>>();
+				    $$.paraTypeAndNames->push_back({temp_type, *($2.names)});
+					
+					$$.targetCode = new string();
+
+					for (int i = 0; i < $2->size(); i++)
+					{
+						$$.targetCode->append(*($4.targetCode));
+						if (temp_type.type != BasicType::CALLABLE && temp_type.dimension)
+						$$.targetCode->append(" &")
+									 ->append($2.names[i])
+									 ->append(", ");
+					}
+					$$.targetCode->pop_back();
 				}
 				|  identifier_list ':' type
 				{
+				    // 填写参数表
+					$$.paraTypeAndNames = new vector<pair<Type, vector<string>>>();
+				    $$.paraTypeAndNames->push_back({$4.type, *($2.names)});
+					
+					$$.targetCode = new string();
 
+					for (int i = 0; i < $2->size(); i++)
+					{
+						$$.targetCode->append(*($4.targetCode))
+									 ->append(" &")
+									 ->append($2.names[i])
+									 ->append(", ");
+					}
+					$$.targetCode->pop_back();
 				};
 
 compound_statement : BEGIN optional_statements END
 				{
-
+					
 				};
 
 optional_statements : statement_list
