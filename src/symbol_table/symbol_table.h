@@ -53,7 +53,6 @@ namespace PascalSToCPP
                    ret_type == rhs.ret_type;
         }
 
-
         bool operator!=(const Type &rhs) const
         {
             return !((*this) == rhs);
@@ -199,10 +198,10 @@ namespace PascalSToCPP
         const Symbol &getSymbol(const int symbol_ind) const;
 
         // 如果当前作用域不为全局作用域, 返回其父作用域对应的符号
-        const Symbol &getParentSymbol() const
+        const Symbol *const getParentSymbol() const
         {
             assert(!isInGlobalScope());
-            return getSymbolGlobal(scope_ind_);
+            return &getSymbolGlobal(scope_ind_);
         }
 
         // 返回当前作用域是否为全局作用域

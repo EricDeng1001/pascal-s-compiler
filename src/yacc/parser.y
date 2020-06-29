@@ -39,7 +39,7 @@ SymbolTable sym_table;
 	struct
 	{
 		vector <string>* names;
-	    vector <struct Type>* types;
+	    vector <Type>* types;
 	    string* targetCode;
 	} exprList;
 
@@ -215,7 +215,7 @@ standard_type: INTEGER
 
 				};
 
-subprogram_declarations : subprogram_declarations subprogram_declaration ';'
+subprogram_declarations: subprogram_declarations subprogram_declaration ';'
 				{
 					string temp = string($1->data()) + "\n" + string($2->data());
 					$$ = new string(temp);
@@ -225,14 +225,14 @@ subprogram_declarations : subprogram_declarations subprogram_declaration ';'
 					$$ = new string("");
 				};
 
-subprogram_declaration : subprogram_head declarations compound_statement
+subprogram_declaration: subprogram_head declarations compound_statement
 				{
 					string temp = string($1->data()) + "\n" + string($2->data()) + "\n" + string($3->data()) + "\n}\n";
 					$$ = new string(temp);
 					//TODO重定向
 				};
 
-subprogram_head : FUNCTION ID arguments ':' standard_type ';'
+subprogram_head: FUNCTION ID arguments ':' standard_type ';'
 				{
 
 
@@ -250,7 +250,7 @@ subprogram_head : FUNCTION ID arguments ':' standard_type ';'
 				};
 
 
-arguments : '(' parameter_lists ')'
+arguments: '(' parameter_lists ')'
 				{
 					$$.paraType = new vector <DATA_TYPE>;
 					for(int i = 0; i < ($2.paraType)->size(); i++)
@@ -266,9 +266,8 @@ arguments : '(' parameter_lists ')'
 					$$.targetCode = new string(temp);
 				};
 
-parameter_lists : parameter_lists ';' parameter_list
+parameter_lists: parameter_lists ';' parameter_list
 				{
-					// TODO 检查顺序是否正确
 					$$.targetCode = new string($1.targetCode);
 					$$.targetCode.push_back(','); // 分隔两个参数列表
 					$$.targetCode.append(*($3.targetCode));
@@ -281,7 +280,7 @@ parameter_lists : parameter_lists ';' parameter_list
 					$$.paraTypeAndNames = new vector<pair<Type, vector<string>>>($1.paraTypeAndNames);
 				};
 
-parameter_list : VAR identifier_list ':' type
+parameter_list: VAR identifier_list ':' type
 				{
 					// 填写参数表
 					Type &temp_type = *($4.type);
@@ -334,36 +333,36 @@ parameter_list : VAR identifier_list ':' type
 					$$.targetCode->pop_back(); // 将最后一个逗号弹出
 				};
 
-compound_statement : BEGIN optional_statements END
+compound_statement: BEGIN optional_statements END
 				{
 					string temp_code;
 					temp_code.append("{\n")
-							 .append(*($2.targetCode))
+							 .append(*($2))
 							 .append("\n}\n");
-					// $$.targetCode = new string(move(temp_code));
-					$$.targetCode = new string(temp_code);
+					// $$ = new string(move(temp_code));
+					$$ = new string(temp_code);
 				};
 
-optional_statements : statement_list
+optional_statements: statement_list
 				{
-					$$.targetCode = new string(*($1.targetCode));
+					$$ = new string(*($1));
 				}
 				|
 				{
-					$$.targetCode = new string("");
+					$$ = new string("");
 				};
 
-statement_list : statement_list ';' statement
+statement_list: statement_list ';' statement
 				{
-					$$.targetCode = new string(*($1.targetCode));
-					$$.targetCode->append(*($2.targetCode) + "\n");
+					$$ = new string(*($1));
+					$$->append(*($2) + "\n");
 				}
 				| statement
 				{
-					$$.targetCode = new string(*($1.targetCode) + "\n");
+					$$ = new string(*($1) + "\n");
 				};
 
-statement : variable ASSIGNOP expression
+statement: variable ASSIGNOP expression
 				{
 					Type lhs_type, rhs_type;
 					bool is_return{false};
@@ -378,7 +377,8 @@ statement : variable ASSIGNOP expression
 					
 					if (lhs_type != rhs_type)
 					{
-						// TODO 类型错误处理
+						yyerror("赋值语句两边的类型不相等");
+						yyerrok;
 					}
 
 					string temp_code;
@@ -395,46 +395,92 @@ statement : variable ASSIGNOP expression
 								 .append(*($3.targetCode));
 					}
 
-					// $$.targetCode = new string(move(temp_code));
-					$$.targetCode = new string(temp_code);
+					// $$ = new string(move(temp_code));
+					$$ = new string(temp_code);
 				}
 				| procedure_call_statement
 				{
-					$$.targetCode = new string(*($1.targetCode) + ";");
+					$$ = new string(*($1) + ";");
 				}
 				| compound_statement
 				{
-					$$.targetCode = new string(*($1.targetCode) + ";");
+					$$ = new string(*($1) + ";");
 				}
-					struct
-	{
-		Type *type;
-		string* targetCode;
-	}expStruct;
 				| IF expression THEN statement
 				{
 					Type expr_type = $2.type->type;
 					if (expr_type.type != BasicType::BOOLEAN)
-					
+					{
+						yyerror("if 后的表达式必须为布尔表达式");
+						yyerrok;
+					}
+
+					string temp_code;
+					temp_code.append(string("if (") + *($2.targetCode) + ") ")
+							 .append("{\n")
+							 .append(*($4))
+							 .append("\n}\n");
 				}
 				| IF expression THEN statement ELSE statement
 				{
+					Type expr_type = $2.type->type;
+					if (expr_type.type != BasicType::BOOLEAN)
+					{
+						yyerror("if 后的表达式必须为布尔表达式");
+						yyerrok;
+					}
 
+					string temp_code;
+					temp_code.append(string("if (") + *($2.targetCode) + ") ")
+							 .append("{\n")
+							 .append(*($4) + "\n")
+							 .append("}\n")
+							 .append("else {\n")
+							 .append(*($6) + "\n")
+							 .append("}\n");
 				}
 				| WHILE expression DO statement
 				{
+					Type expr_type = $2.type->type;
+					if (expr_type.type != BasicType::BOOLEAN)
+					{
+						yyerror("while 后的表达式必须为布尔表达式");
+						yyerrok;
+					}
 
+					string temp_code;
+					temp_code.append(string("while (") + *($2.targetCode) + ") ")
+							 .append("{\n")
+							 .append(*($4) + "\n")
+							 .append("}\n");
 				}
 				| READ '(' identifier_list ')'
 				{
-
+					string temp_code("cin");
+					for (const auto &name : *($3.names))
+						temp_code.append(" >> ")
+								 .append(name);
+					$$ = new string(temp_code);
 				}
 				| WRITE '(' expr_list ')'
 				{
+					string temp_code("cout");
+					for (int i = 0; i < $3.types->size(); i++)
+					{
+						if ($3.types[i] == BasicType::VOID)
+						{
+							yyerror("write 中的表达式的值不能为空");
+							yyerrok;
+							// TODO 错误处理, 表达式不能为空
+						}
+					}
 
+					for (const auto &name : *($3.names))
+						temp_code.append(" >> ")
+								 .append(name);
 				};
 
-variable : ID
+variable: ID
 				{
 
 				}
@@ -443,7 +489,7 @@ variable : ID
 
 				};
 
-procedure_call_statement : ID
+procedure_call_statement: ID
 				{
 
 				}
@@ -452,7 +498,7 @@ procedure_call_statement : ID
 
 				};
 
-expr_list : expr_list ',' expression
+expr_list: expr_list ',' expression
 				{
 
 				}
@@ -461,7 +507,7 @@ expr_list : expr_list ',' expression
 
 				};
 
-expression : simple_expr RELOP simple_expr
+expression: simple_expr RELOP simple_expr
 				{
 
 				}
@@ -470,7 +516,7 @@ expression : simple_expr RELOP simple_expr
 
 				};
 
-simple_expr : simple_expr ADDOP term
+simple_expr: simple_expr ADDOP term
 				{
 
 				}
@@ -483,7 +529,7 @@ simple_expr : simple_expr ADDOP term
 
 				};
 
-term : term MULOP factor
+term: term MULOP factor
 				{
 
 				}
@@ -492,7 +538,7 @@ term : term MULOP factor
 
 				};
 
-factor : ID
+factor: ID
 				{
 
 				}
@@ -525,7 +571,7 @@ factor : ID
 
 				};
 
-sign : '+'
+sign: '+'
 				{
 
 				}
