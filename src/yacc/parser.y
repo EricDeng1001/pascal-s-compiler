@@ -132,8 +132,7 @@ program_body: declarations subprogram_declarations compound_statement
 
 declarations: VAR declaration ';'
 				{
-					string tmp_target = string($2->data());
-					$$ = new string(tmp_target);
+					$$ = $2;
 				}
 				|
 				{
@@ -144,17 +143,15 @@ declaration: declaration ';' identifier_list ':' type
 				{
 					//使用dimension来判断是否为数组
 					if(($5.type)->dimension == 0) {
-						string tmp_target = string(($5.targetCode)->data());
+						string tmp_target = $5->targetCode;
 						for(int i = 0; i < ($3.names)->size(); i++) {
 
-							Symbol sym;
-							sym.type = $5->type;
-							sym.name = (*($3.names))[i];
+							Symbol sym((*($3.names))[i], $5->type, yylineno);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
 								yyerror("declaration -> declaration ; identifier_list : type : redefined varible Identifier in identifier_list!");
-								yyerrok();
+								yyerrok;
 							}
 							else {	// 生成目标代码
 								if(i != ($3.names)->size() - 1)
@@ -163,33 +160,27 @@ declaration: declaration ';' identifier_list ':' type
 									tmp_target += " " + (*($3.names))[i] + ";\n";
 							}
 						}
-						$$ = new string(string(($1)->data()) + tmp_target);
+						$$ = new string(*$1 + tmp_target);
 					}else if(($5.type)->dimension > 0)
 					{
-						string tmp_target = string(($5.targetCode)->data());
+						string tmp_target = $5->targetCode;
 						for(int i = 0; i < ($3.names)->size(); i++) {
-							Symbol sym;
-							sym.type = $5->type;
-							sym.name = (*($3.names))[i];
+							Symbol sym((*($3.names))[i], $5->type, yylineno);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
 								parser.yyerror("declaration -> declaration ; identifier_list : type : redefined array Identifier in identifier_list!");
-								parser.yyerrok();
+								parser.yyerrok;
 							}
 							else {	// 生成目标代码
-								int array_range = $5.array_top - $5.array_bottom  + 1;
-								stringstream ss;
-								string target;
-								ss << array_range;
-								ss >> target;
-								if(i != ($3.idNameList)->size() - 1)
+								string target = to_string($5.array_top - $5.array_bottom  + 1);
+								if(i != ($3.names)->size() - 1)
 									tmp_target += " " + (*($3.names))[i] + "[" + target + "],";
 								else
 									tmp_target += " " + (*($3.names))[i] + "[" + target + "];\n";
 							}
 						}
-						$$ = new string(string(($1)->data()) + tmp_target);
+						$$ = new string(*$1 + tmp_target);
 					}
 				}
 				| identifier_list ':' type
@@ -198,15 +189,12 @@ declaration: declaration ';' identifier_list ':' type
 					if(($3.type)->dimension == 0) {
 						string tmp_target = string(($3.targetCode)->data());
 						for(int i = 0; i < ($1.names)->size(); i++) {
-
-							struct Symbol sym;
-							sym.type = $3->type;
-							sym.name = (*($1.names))[i];
+							Symbol sym((*($1.names))[i], $3->type, yylineno);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
 								yyerror("declaration -> declaration ; identifier_list : type : redefined varible Identifier in identifier_list!");
-								yyerrok();
+								yyerrok;
 							}
 							else {	// 生成目标代码
 								if(i != ($1.names)->size() - 1)
@@ -220,22 +208,16 @@ declaration: declaration ';' identifier_list ':' type
 					{
 						string tmp_target = string(($3.targetCode)->data());
 						for(int i = 0; i < ($1.names)->size(); i++) {
-							struct Symbol sym;
-							sym.type = $3->type;
-							sym.name = (*($1.names))[i];
+							Symbol sym((*($1.names))[i], $3->type, yylineno);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) {
 								parser.yyerror("declaration -> declaration ; identifier_list : type : redefined array Identifier in identifier_list!");
-								parser.yyerrok();
+								parser.yyerrok;
 							}
 							else {	// 生成目标代码
-								int array_range = $3.array_top - $3.array_bottom  + 1;
-								stringstream ss;
-								string target;
-								ss << array_range;
-								ss >> target;
-								if(i != ($1.idNameList)->size() - 1)
+								string target = to_string($3.array_top - $3.array_bottom  + 1);
+								if(i != ($1.names)->size() - 1)
 									tmp_target += " " + (*($1.names))[i] + "[" + target + "],";
 								else
 									tmp_target += " " + (*($1.names))[i] + "[" + target + "];\n";
@@ -244,31 +226,44 @@ declaration: declaration ';' identifier_list ':' type
 						$$ = new string(tmp_target);
 					}
 				};
-
 type: standard_type
 				{
-
+					$$.type = $1.type;
+					$$.targetCode = $1.targetCode;
 				}
 				| ARRAY '[' NUM '.' '.' NUM ']' OF standard_type
 				{
-
-				}
-				| RECORD declaration END
-				{
-
+					if($3.type != BasicType::INTEGER || $6.type != BasicType::INTEGER) {
+						yyerror("type -> ARRAY [ NUM . . NUM ] OF standard_type : 数组参数NUM类型错误!");		/////////////////////////////////////////////////////// 现在
+						yyerrok;
+					} 
+					$$.type = $9.type;
+					$$.array_top = (int)($6.num);
+					$$.array_bottom = (int)($3.num);
+					if($$.array_top - $$.array_bottom < 0) {
+						parser.yyerror("type -> ARRAY [ NUM . . NUM ] OF standard_type : 数组下界不可小于上界!");
+						parser.yyerrok;
+					}
+					$$.targetCode = $9.targetCode;
 				};
 
 standard_type: INTEGER
 				{
-
+					$$.type = new Type;
+					$$->type.type = BasicType::INTEGER;
+					$$.targetCode = new string("int");
 				}
 				| REAL
 				{
-
+					$$.type = new Type;
+					$$->type.type = BasicType::REAL;
+					$$.targetCode = new string("double");
 				}
 				| BOOLEAN
 				{
-
+					$$.type = new Type;
+					$$->type.type = BasicType::BOOLEAN;
+					$$.targetCode = new string("bool");
 				};
 
 subprogram_declarations: subprogram_declarations subprogram_declaration ';'
@@ -644,22 +639,22 @@ variable: ID
           Symbol* symbol = sym_table.getSymbol(*($1));
           if (symbol == nullptr) {
             yyerror("id not defined!");
-            yyerrok();
+            yyerrok;
           } else if (symbol->type.isCallable()) {
             if (*($1) == sym_table.getParentSymbol()->name) {
               if (symbol->type.ret_type == BasicType::VOID) {
                 yyerror("could not return");
-                yyerrok();
+                yyerrok;
               } else {
                 $$.type = new Type(symbol->type);
               }
             } else {
                 yyerror("return id wrong");
-                yyerrok();
+                yyerrok;
             }
           } else if (symbol->type.isArray()) {
             yyerror("can not assign array");
-            yyerrok();
+            yyerrok;
           }
           else {
             $$.type = new Type(symbol->type);
@@ -671,14 +666,14 @@ variable: ID
           Symbol* symbol = sym_table.getSymbol(*($1));
           if (symbol == nullptr) {
             yyerror("id not defined");
-            yyerrok();
+            yyerrok;
           } else if (!symbol->type.isArray()) {
             yyerror("id must be an array");
-            yyerrok();
+            yyerrok;
           } else {
             if ($3.type->type != BasicType::INTEGER) {
               yyerror("引用必须是整数");
-              yyerrok();
+              yyerrok;
             } else {
               $$.type = new Type(symbol->type);
               $$.targetCode = new string(*($1) + "[" +  *($3.targetCode) + "]");
@@ -691,7 +686,7 @@ procedure_call_statement: ID
           Symbol* symbol = sym_table.getSymbol(*($1));
           if (symbol == nullptr) {
             yyerror("id not defined");
-            yyerrok();
+            yyerrok;
           } else {
             if (symbol->type.isCallable()) {
               $$ = new string(*($1) + "();\n");
@@ -705,20 +700,20 @@ procedure_call_statement: ID
           Symbol* symbol = sym_table.getSymbol(*($1));
           if (symbol == nullptr) {
             yyerror("id not defined");
-            yyerrok();
+            yyerrok;
           } else {
             if (!symbol->type.isCallable()) {
               yyerror("id is not callable");
-              yyerrok();
+              yyerrok;
             } else {
               if (symbol->type.dimension != $3.names->size()) {
                 yyerror("参数个数不匹配");
-                yyerrok();
+                yyerrok;
               } else {
                 for (int i = 0; i < $3.types->size(); i++) {
                   if ((*($3.types))[i] != symbol->args[i]) {
                     yyerror(string("第") + string(i) + "个参数类型不匹配");
-                    yyerrok();
+                    yyerrok;
                   }
                 }
                 $$ = new string(*($1) + "(" + *($3.targetCode) + ");\n");
