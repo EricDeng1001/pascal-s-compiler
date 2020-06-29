@@ -80,6 +80,12 @@ namespace PascalSToCPP
             return type != BasicType::CALLABLE && dimension > 0;
         }
 
+        // 判断类型是否为可调用对象
+        bool isCallable() const noexcept
+        {
+            return type == BasicType::CALLABLE;
+        }
+
         // 如果类型为数组, 则返回其各个维度周期的字符串表示(e.g. [a][b][c])
         std::string getArrayPeriodsString() const
         {
