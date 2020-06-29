@@ -122,9 +122,9 @@ identifier_list: identifier_list ',' ID
 
 program_body: declarations subprogram_declarations compound_statement
 				{
-					string tmp_target = *($1) + "\n" + 
+					string tmp_target = *($1) + "\n" +
 										*($2) + "\n" +
-										"int main()\n{\n" + 
+										"int main()\n{\n" +
 										*($3) + "\n" +
 										"return 0;\n}\n";
 					$$ = new string(tmp_target);
@@ -691,7 +691,8 @@ procedure_call_statement: ID
             if (symbol->type.isCallable()) {
               $$ = new string(*($1) + "();\n");
             } else {
-              $$ = new string(*($1) + ";\n");
+              yyerror("id is not callable");
+              yyerrok;
             }
           }
 				}
@@ -745,33 +746,129 @@ expr_list: expr_list ',' expression
 
 expression: simple_expr RELOP simple_expr
 				{
-
+          string relop;
+          if (!($1.type->isCallable()) && !($1.type->isArray())
+          && !($3.type->isCallable()) && !($3.type->isArray())) {
+            if (*($2) == "<>") {
+              relop = "!=";
+            } else if (*($2) == "=") {
+              relop = "==";
+            } else {
+              relop = string(*($2));
+            }
+            $$.type = new Type();
+            $$.type->type = BasicType::BOOLEAN;
+            $$.targetCode = new string(*($1.targetCode) + relop + *($3.targetCode));
+          } else {
+            yyerror("关系表达式，类型不正确");
+            yyerrok;
+          }
 				}
 				| simple_expr
 				{
-
+          $$.type = new Type($1.type);
+          $$.targetCode = new string(*($1));
 				};
 
 simple_expr: simple_expr ADDOP term
 				{
-
+          if ($1.type->isCallable() || $1.type->isArray()
+          || $3.type->isCallable() || $3.type->isArray()) {
+            yyerror("运算类型不正确");
+            yyerrok;
+          } else {
+            if (*($2) == "or") {
+              if ($1.type->type != BasicType::BOOLEAN || $3.type->type != BasicType::BOOLEAN) {
+                yyerror("运算类型不正确");
+                yyerrok;
+              } else {
+                $$.targetCode = new string(*($1.targetCode) + "||" + *($3.targetCode));
+                $$.type = new Type();
+                $$.type->type = BasicType::BOOLEAN;
+              }
+            } else {
+              if (($1.type == BasicType::INTEGER || $1.type == BasicType::REAL)
+              && ($3.type == BasicType::INTEGER || $3.type == BasicType::REAL)) {
+                 $$.type = new Type();
+                if ($1.type == BasicType::REAL || $3.type == BasicType::REAL) {
+                  $$.type->type = BasicType::REAL;
+                } else {
+                  $$.type->type = BasicType::INTEGER;
+                }
+                $$.targetCode = new string(*($1.targetCode) + *($2) + *($3.targetCode));
+              } else {
+                yyerror("运算类型不正确");
+                yyerrok;
+              }
+            }
+          }
 				}
 				| term
 				{
-
+          $$.type = new Type($1.type);
+          $$.targetCode = new string(*($1.targetCode));
 				}
 				| sign term
 				{
-
+          $$.type = new Type($2.type);
+          $$.targetCode = new string(*($1) + *($2.targetCode));
 				};
 
 term: term MULOP factor
 				{
-
+          if ($1.type->isCallable() || $1.type->isArray()
+          || $3.type->isCallable() || $3.type->isArray()) {
+            yyerror("运算类型不正确");
+            yyerrok;
+          } else {
+            if (*($2) == "and") {
+              if ($1.type->type != BasicType::BOOLEAN || $3.type->type != BasicType::BOOLEAN) {
+                yyerror("运算类型不正确");
+                yyerrok;
+              } else {
+                $$.targetCode = new string(*($1.targetCode) + "&&" + *($3.targetCode));
+                $$.type = new Type();
+                $$.type->type = BasicType::BOOLEAN;
+              }
+            } else if (*($2) == "div") {
+              if ($1.type->type != BasicType::INTEGER || $3.type->type != BasicType::INTEGER) {
+                yyerror("运算类型不正确");
+                yyerrok;
+              } else {
+                $$.targetCode = new string(*($1.targetCode) + " / " + *($3.targetCode));
+                $$.type = new Type();
+                $$.type->type = BasicType.INTEGER;
+              }
+            } else if ( *($2) == "mod") {
+              if ($1.type->type != BasicType::INTEGER || $3.type->type != BasicType::INTEGER) {
+                yyerror("运算类型不正确");
+                yyerrok;
+              } else {
+                $$.targetCode = new string(*($1.targetCode) + " % " + *($3.targetCode));
+                $$.type = new Type();
+                $$.type->type = BasicType.INTEGER;
+              }
+            } else {
+              if (($1.type == BasicType::INTEGER || $1.type == BasicType::REAL)
+              && ($3.type == BasicType::INTEGER || $3.type == BasicType::REAL)) {
+                 $$.type = new Type();
+                if ($1.type == BasicType::REAL || $3.type == BasicType::REAL) {
+                  $$.type->type = BasicType::REAL;
+                } else {
+                  $$.type->type = BasicType::INTEGER;
+                }
+                $$.targetCode = new string(*($1.targetCode) + *($2) + *($3.targetCode));
+              } else {
+                yyerror("运算类型不正确");
+                yyerrok;
+              }
+            }
+          }
 				}
 				| factor
 				{
-
+          $$.type = new Type($1.type);
+          $$.targetCode = new string(*($1));
 				};
 
 factor: ID
