@@ -236,7 +236,7 @@ type: standard_type
 					if($3.type != BasicType::INTEGER || $6.type != BasicType::INTEGER) {
 						yyerror("type -> ARRAY [ NUM . . NUM ] OF standard_type : 数组参数NUM类型错误!");		/////////////////////////////////////////////////////// 现在
 						yyerrok;
-					} 
+					}
 					$$.type = $9.type;
 					$$.array_top = (int)($6.num);
 					$$.array_bottom = (int)($3.num);
@@ -278,9 +278,9 @@ subprogram_declarations: subprogram_declarations subprogram_declaration ';'
 
 subprogram_declaration: subprogram_head declarations compound_statement
 				{
-					string temp = *($1) + "\n" + 
-								  *($2) + "\n" + 
-								  *($3) + "\n" + 
+					string temp = *($1) + "\n" +
+								  *($2) + "\n" +
+								  *($3) + "\n" +
 								  "}\n";
 					$$ = new string(temp);
 					if (!symbol_table.ExitScope())
@@ -408,7 +408,7 @@ subprogram_head: FUNCTION ID arguments ':' standard_type ';'
 
 arguments: '(' parameter_lists ')'
 				{
-					$$.paraTypeAndNames = 
+					$$.paraTypeAndNames =
 						new vector<pair<Type, vector<string>>>(*($2.paraTypeAndNames));
 					$$.targetCode = new string("(");
 					$$.targetCode->append(*($2.targetCode))
@@ -873,7 +873,30 @@ term: term MULOP factor
 
 factor: ID
 				{
-
+          Symbol* symbol = sym_table.getSymbol(*($1));
+          if (symbol == nullptr) {
+            yyerror("id not defined");
+            yyerrok;
+          } else {
+            if (symbol->type.isCallable()) {
+              if (symbol->ret_type == BasicType::VOID) {
+                yyerror("id不能是一个void类型的函数或过程");
+                yyerrok;
+              } else {
+                if (symbol->dimension != 0) {
+                  yyerror("函数不能无参调用");
+                  yyerrok;
+                } else {
+                  $$.type = new Type();
+                  $$.type->type = symbol->ret_type;
+                  $$.targetCode = *($1) + "()";
+                }
+              }
+            } else {
+              $$.type = new Type(symbol->type);
+              $$.targetCode = new string(*($1));
+            }
+          }
 				}
 				| ID '(' expr_list ')'
 				{
@@ -906,11 +929,11 @@ factor: ID
 
 sign: '+'
 				{
-
+          $$ = new string("+");
 				}
 				| '-'
 				{
-
+          $$ = new string("-");
 				};
 
 %%
