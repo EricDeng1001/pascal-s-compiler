@@ -14,7 +14,8 @@ using namespace std;
 using namespace PascalSToCPP;
 
 SymbolTable sym_table;
-
+int yylex(void);
+void yyerror(const string &err_msg);
 %}
 
 %code requires {
@@ -154,7 +155,7 @@ declaration: declaration ';' identifier_list ':' type
 						for(int i = 0; i < ($3.names)->size(); i++)
 						{
 
-							Symbol sym((*($3.names))[i], *($5.type), yylineno);
+							Symbol sym((*($3.names))[i], *($5.type), @$.first_line);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) 
@@ -177,7 +178,7 @@ declaration: declaration ';' identifier_list ':' type
 						string tmp_target = *($5.targetCode);
 						for(int i = 0; i < ($3.names)->size(); i++) 
 						{
-							Symbol sym((*($3.names))[i], *($5.type), yylineno);
+							Symbol sym((*($3.names))[i], *($5.type), @$.first_line);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) 
@@ -205,7 +206,7 @@ declaration: declaration ';' identifier_list ':' type
 						string tmp_target = *($3.targetCode);
 						for(int i = 0; i < ($1.names)->size(); i++) 
 						{
-							Symbol sym((*($1.names))[i], *($3.type), yylineno);
+							Symbol sym((*($1.names))[i], *($3.type), @$.first_line);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) 
@@ -228,7 +229,7 @@ declaration: declaration ';' identifier_list ':' type
 						string tmp_target = string(($3.targetCode)->data());
 						for(int i = 0; i < ($1.names)->size(); i++) 
 						{
-							Symbol sym((*($1.names))[i], *($3.type), yylineno);
+							Symbol sym((*($1.names))[i], *($3.type), @$.first_line);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) 
@@ -324,7 +325,7 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 					SymbolBuilder func_builder = Symbol::getSymbolBuilder();
 					func_builder.addName(*($2))
 						   		.setRetType($5.type->type)
-								.setDefAt(yylineno);
+								.setDefAt(@$.first_line);
 
 					int dimension = 0;
 					for (const auto &[type, names] : *($3.paraTypeAndNames))
@@ -349,7 +350,7 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 					{
 						// 检查名字是否冲突
 						SymbolBuilder params_builder = Symbol::getSymbolBuilder();
-						params_builder.setType(type).setDefAt(yylineno);
+						params_builder.setType(type).setDefAt(@$.first_line);
 						for (const auto &name : names)
 						{
 							if (sym_table.isInScope(name) || name == func_symbol.name)
@@ -384,7 +385,7 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 
 					SymbolBuilder func_builder = Symbol::getSymbolBuilder();
 					func_builder.addName(*($2))
-								.setDefAt(yylineno);
+								.setDefAt(@$.first_line);
 
 					int dimension = 0;
 					for (const auto &[type, names] : *($3.paraTypeAndNames))
@@ -409,7 +410,7 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 					{
 						// 检查名字是否冲突
 						SymbolBuilder params_builder = Symbol::getSymbolBuilder();
-						params_builder.setType(type).setDefAt(yylineno);
+						params_builder.setType(type).setDefAt(@$.first_line);
 						for (const auto &name : names)
 						{
 							if (sym_table.isInScope(name) || name == func_symbol.name)
@@ -1042,6 +1043,11 @@ sign: '+'
 				};
 
 %%
+
+void yyerror(const string &err_msg)
+{
+	cerr << err_msg << endl;
+}
 
 int main(void) {
 	return yyparse();
