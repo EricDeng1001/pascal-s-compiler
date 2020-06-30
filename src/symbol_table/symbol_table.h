@@ -124,7 +124,8 @@ namespace PascalSToCPP
         std::string toString() const
         {
             std::string res = "[";
-            res += "BasicType=" + BasicTypeStr(type) +"]";
+            res += "BasicType=" + BasicTypeStr(type) +", dimension=" + std::to_string(dimension) +
+                   ", retType=" + BasicTypeStr(ret_type) + "]";
             return res;
         }
     };

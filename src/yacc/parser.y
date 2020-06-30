@@ -25,8 +25,11 @@ void debugInfo(const string &info)
 {
 	cout << "!DEBUG!: " << info << endl;
 }
+
+void debugInfoBreak() { cout << endl; }
 #else
 void debugInfo(const string &info) {}
+void debugInfoBreak() {}
 #endif
 %}
 
@@ -112,6 +115,7 @@ program: program_head program_body '.'
 					string tmp_target = *($1) + *($2);
 					$$ = new string(tmp_target);
 					cout << *($$);
+					debugInfoBreak();
 				}
         | program_head program_body error
 				{
@@ -121,6 +125,7 @@ program: program_head program_body '.'
 					cout << *($$);
 					yyerror("program -> program_head program_body . : missing '.'at the end of the program.", @$.first_line);
 					yyerrok;
+					debugInfoBreak();
 				};
 
 program_head: TOK_PROGRAM TOK_ID '(' identifier_list ')' ';'
@@ -134,13 +139,15 @@ program_head: TOK_PROGRAM TOK_ID '(' identifier_list ')' ';'
 						yyerrok;
 					}
 					$$ = new string("#include <iostream>\n#include <cmath>\nusing namespace std;\n"); //填写C++程序首部
+					debugInfoBreak();
 				}
 			  | TOK_PROGRAM TOK_ID ';'
 			  	{
 					debugInfo("进入产生式 TOK_PROGRAM TOK_ID ';'");
 					debugInfo("TOK_PROGRAM = " + *($1) + ", TOK_ID = " + *($2));
 					$$ = new string("#include <iostream>\n#include <cmath>\nusing namespace std;\n"); //填写C++程序首部
-			  	};
+			  		debugInfoBreak();
+				};
 
 identifier_list: identifier_list ',' TOK_ID
 				{
@@ -150,6 +157,7 @@ identifier_list: identifier_list ',' TOK_ID
 					$$.names = new vector<string>(*($1.names));
 					// 记录新的id
 					($$.names)->push_back(*($3));
+					debugInfoBreak();
 				}
 				| TOK_ID
 				{
@@ -157,6 +165,7 @@ identifier_list: identifier_list ',' TOK_ID
 					debugInfo("TOK_ID = " + *($1));
 					$$.names = new vector<string>();
 					($$.names)->push_back(*($1));
+					debugInfoBreak();
 				};
 
 program_body: declarations subprogram_declarations compound_statement
@@ -168,6 +177,7 @@ program_body: declarations subprogram_declarations compound_statement
 										*($3) + "\n" +
 										"return 0;\n}\n";
 					$$ = new string(tmp_target);
+					debugInfoBreak();
 				};
 
 declarations: TOK_VAR declaration ';'
@@ -232,6 +242,7 @@ declaration: declaration ';' identifier_list ':' type
 						}
 						$$ = new string(*($1) + tmp_target);
 					}
+					debugInfoBreak();
 				}
 				| identifier_list ':' type
 				{
@@ -260,6 +271,7 @@ declaration: declaration ';' identifier_list ':' type
 							}
 						}
 						$$ = new string(tmp_target);
+						debugInfoBreak();
 					}
 					else if(($3.type)->dimension > 0)
 					{
@@ -284,6 +296,7 @@ declaration: declaration ';' identifier_list ':' type
 							}
 						}
 						$$ = new string(tmp_target);
+						debugInfoBreak();
 					}
 				};
 
@@ -293,6 +306,7 @@ type: standard_type
 					debugInfo("standard_type = " + *($1.targetCode));
 					$$.type = new Type(*($1.type));
 					$$.targetCode = new string(*($1.targetCode));
+					debugInfoBreak();
 				}
 				| TOK_ARRAY '[' TOK_NUM '.' '.' TOK_NUM ']' TOK_OF standard_type
 				{
@@ -311,6 +325,7 @@ type: standard_type
 						yyerrok;
 					}
 					$$.targetCode = new string(*($9.targetCode));
+					debugInfoBreak();
 				};
 
 standard_type: TOK_INTEGER
@@ -354,6 +369,7 @@ subprogram_declaration: subprogram_head declarations compound_statement
 						// TODO 错误处理, 退出作用域失败
 					}
 					debugInfo("退出作用域");
+					debugInfoBreak();
 				};
 
 subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
@@ -415,6 +431,7 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 
 					string temp_code = *($5.targetCode) + " " + *($2) + *($3.targetCode);
 					$$ = new string(temp_code);
+					debugInfoBreak();
 				}
 				| TOK_FUNCTION TOK_ID arguments error
 				{
@@ -481,6 +498,7 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 
 					string temp_code = "void " + *($2) + *($3.targetCode);
 					$$ = new string(temp_code);
+					debugInfoBreak();
 				}
 				| TOK_PROCEDURE TOK_ID arguments error ';'
 				{
@@ -646,12 +664,14 @@ statement: variable TOK_ASSIGNOP expression
 
 					// $$ = new string(move(temp_code));
 					$$ = new string(temp_code);
+					debugInfoBreak();
 				}
 				| procedure_call_statement
 				{
 				    debugInfo("进入产生式 statement: procedure_call_statement");
 					debugInfo("pcs = " + *($1));
 					$$ = new string(*($1) + ";");
+					debugInfoBreak();
 				}
 				| compound_statement
 				{
@@ -819,6 +839,7 @@ procedure_call_statement: TOK_ID
           			    	yyerrok;
           			  	}
           			}
+					debugInfoBreak();
 				}
 				| TOK_ID '(' expr_list ')'
 				{
@@ -860,6 +881,7 @@ procedure_call_statement: TOK_ID
 							}
 						}
           			}
+					debugInfoBreak();
 				};
 
 expr_list: expr_list ',' expression
@@ -876,6 +898,7 @@ expr_list: expr_list ',' expression
           			$$.names->push_back(*($3.targetCode));
           			$$.types->push_back(*($3.type));
           			$$.targetCode = new string(*($1.targetCode) + ", " + *($3.targetCode));
+					debugInfoBreak();
 				}
 				| expression
 				{
@@ -886,6 +909,7 @@ expr_list: expr_list ',' expression
           			$$.names->push_back(*($1.targetCode));
           			$$.types->push_back(*($1.type));
           			$$.targetCode = new string(*($1.targetCode));
+					debugInfoBreak();
 				};
 
 expression: simple_expr TOK_RELOP simple_expr
@@ -973,6 +997,7 @@ simple_expr: simple_expr TOK_ADDOP term
           			    	}
           			  	}
           			}
+					debugInfoBreak();
 				}
 				| term
 				{
@@ -980,6 +1005,7 @@ simple_expr: simple_expr TOK_ADDOP term
 					debugInfo("term.type = " + $1.type->toString() + ", term.targetCode = " + *($1.targetCode));
           			$$.type = new Type(*($1.type));
           			$$.targetCode = new string(*($1.targetCode));
+					debugInfoBreak();
 				}
 				| sign term
 				{
@@ -988,6 +1014,7 @@ simple_expr: simple_expr TOK_ADDOP term
 							  ", term.targetCode = " + *($2.targetCode));
          			$$.type = new Type(*($2.type));
          			$$.targetCode = new string(*($1) + *($2.targetCode));
+					debugInfoBreak();
 				};
 
 term: term TOK_MULOP factor
@@ -1069,6 +1096,7 @@ term: term TOK_MULOP factor
           			    	}
           			  	}
           			}
+					debugInfoBreak();
 				}
 				| factor
 				{
@@ -1076,6 +1104,7 @@ term: term TOK_MULOP factor
 					debugInfo("factor.type = " + $1.type->toString() + ", factor.targetCode = " + *($1.targetCode));
           			$$.type = new Type(*($1.type));
           			$$.targetCode = new string(*($1.targetCode));
+					debugInfoBreak();
 				};
 
 factor: TOK_ID
@@ -1118,6 +1147,7 @@ factor: TOK_ID
           			  	  	$$.targetCode = new string(*($1));
           			  	}
           			}
+					debugInfoBreak();
 				}
 				| TOK_ID '(' expr_list ')'
 				{
@@ -1169,6 +1199,7 @@ factor: TOK_ID
           			  	  	}
           			  	}
           			}
+					debugInfoBreak();
 				}
 				| TOK_ID '[' expression ']'
 				{
