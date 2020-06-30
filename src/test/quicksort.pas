@@ -49,7 +49,8 @@ begin
     k := 1;
     while k <= m do 
     begin
-        write(a[k]);
+        write(a[k], ' ');
 	k := k + 1
-    end
+    end;
+    write('\n')
 end.

@@ -21,9 +21,9 @@ string toLower(const string &str);
 #define YYERROR_VERBOSE
 
 #ifndef NDEBUG
-void debugInfo(const string &info) 
+void debugInfo(const string &info, int line_no) 
 {
-	cout << "!DEBUG!: " << info << endl;
+	cout << "!DEBUG!(" << line_no << "): " << info << endl;
 }
 
 void debugInfoBreak() { cout << endl; }
@@ -118,7 +118,7 @@ using namespace PascalSToCPP;
 
 program: program_head program_body '.'
 				{
-					debugInfo("进入产生式 program: program_head program_body '.'"); 
+					debugInfo("进入产生式 program: program_head program_body '.'", @$.first_line); 
 					string tmp_target = *($1) + *($2);
 					$$ = new string(tmp_target);
 					cout << *($$);
@@ -126,7 +126,7 @@ program: program_head program_body '.'
 				}
         | program_head program_body error
 				{
-					debugInfo("进入产生式 program: program_head program_body error"); 
+					debugInfo("进入产生式 program: program_head program_body error", @$.first_line); 
 					string tmp_target = *($1) + *($2);
 					$$ = new string(tmp_target);
 					cout << *($$);
@@ -137,29 +137,29 @@ program: program_head program_body '.'
 
 program_head: TOK_PROGRAM TOK_ID '(' identifier_list ')' ';'
 				{
-					debugInfo("进入产生式 program_head: TOK_PROGRAM TOK_ID '(' identifier_list ')' ';'");
-					debugInfo("TOK_PROGRAM = " + *($1) + ", TOK_ID = " + *($2));
+					debugInfo("进入产生式 program_head: TOK_PROGRAM TOK_ID '(' identifier_list ')' ';'", @$.first_line);
+					debugInfo("TOK_PROGRAM = " + *($1) + ", TOK_ID = " + *($2), @$.first_line);
 					const auto &names = *($4.names);
 					if (names.size() != 2 || (names.size() == 2 && (toLower(names[0]) != "input" || toLower(names[1]) != "output")))
 					{
 						yyerror("program 后的参数列表必须为input, output", @$.first_line);
 						yyerrok;
 					}
-					$$ = new string("#include <iostream>\n#include <cmath>\nusing namespace std;\n"); //填写C++程序首部
+					$$ = new string("#include <iostream>\nusing namespace std;\n"); //填写C++程序首部
 					debugInfoBreak();
 				}
 			  | TOK_PROGRAM TOK_ID ';'
 			  	{
-					debugInfo("进入产生式 TOK_PROGRAM TOK_ID ';'");
-					debugInfo("TOK_PROGRAM = " + *($1) + ", TOK_ID = " + *($2));
-					$$ = new string("#include <iostream>\n#include <cmath>\nusing namespace std;\n"); //填写C++程序首部
+					debugInfo("进入产生式 TOK_PROGRAM TOK_ID ';'", @$.first_line);
+					debugInfo("TOK_PROGRAM = " + *($1) + ", TOK_ID = " + *($2), @$.first_line);
+					$$ = new string("#include <iostream>\nusing namespace std;\n"); //填写C++程序首部
 			  		debugInfoBreak();
 				};
 
 identifier_list: identifier_list ',' TOK_ID
 				{
-					debugInfo("进入产生式 identifier_list: identifier_list ',' TOK_ID");
-					debugInfo("TOK_ID = " + *($3));
+					debugInfo("进入产生式 identifier_list: identifier_list ',' TOK_ID", @$.first_line);
+					debugInfo("TOK_ID = " + *($3), @$.first_line);
 					// 记录已经录入的参数
 					$$.names = new vector<string>(*($1.names));
 					// 记录新的id
@@ -168,8 +168,8 @@ identifier_list: identifier_list ',' TOK_ID
 				}
 				| TOK_ID
 				{
-					debugInfo("进入产生式 identifier_list: TOK_ID");
-					debugInfo("TOK_ID = " + *($1));
+					debugInfo("进入产生式 identifier_list: TOK_ID", @$.first_line);
+					debugInfo("TOK_ID = " + *($1), @$.first_line);
 					$$.names = new vector<string>();
 					($$.names)->push_back(*($1));
 					debugInfoBreak();
@@ -177,7 +177,7 @@ identifier_list: identifier_list ',' TOK_ID
 
 program_body: declarations subprogram_declarations compound_statement
 				{
-					debugInfo("进入产生式 program_body: declarations subprogram_declarations compound_statement");
+					debugInfo("进入产生式 program_body: declarations subprogram_declarations compound_statement", @$.first_line);
 					string tmp_target = *($1) + "\n" +
 										*($2) + "\n" +
 										"int main()\n{\n" +
@@ -198,8 +198,8 @@ declarations: TOK_VAR declaration ';'
 
 declaration: declaration ';' identifier_list ':' type
 				{
-					debugInfo("进入产生式 declaration: declaration ';' identifier_list ':' type");
-					debugInfo("type = " + *($5.targetCode));
+					debugInfo("进入产生式 declaration: declaration ';' identifier_list ':' type", @$.first_line);
+					debugInfo("type = " + *($5.targetCode), @$.first_line);
 					//使用dimension来判断是否为数组
 					if(($5.type)->dimension == 0) 
 					{
@@ -209,7 +209,7 @@ declaration: declaration ';' identifier_list ':' type
 
 							Symbol sym((*($3.names))[i], *($5.type), @$.first_line);
 							// 插入到符号表
-							debugInfo("插入符号 " + sym.toString());
+							debugInfo("插入符号 " + sym.toString(), @$.first_line);
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) 
 							{
@@ -234,7 +234,7 @@ declaration: declaration ';' identifier_list ':' type
 							Symbol sym((*($3.names))[i], *($5.type), @$.first_line);
 							// 插入到符号表
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
-							debugInfo("插入符号 " + sym.toString());
+							debugInfo("插入符号 " + sym.toString(), @$.first_line);
 							if(res.first == false) 
 							{
 								yyerror("declaration -> declaration ; identifier_list : type : redefined array Identifier in identifier_list!", @$.first_line);
@@ -255,8 +255,8 @@ declaration: declaration ';' identifier_list ':' type
 				}
 				| identifier_list ':' type
 				{
-					debugInfo("进入产生式 declaration: identifier_list ':' type");
-					debugInfo("type = " + $3.type->toString());
+					debugInfo("进入产生式 declaration: identifier_list ':' type", @$.first_line);
+					debugInfo("type = " + $3.type->toString(), @$.first_line);
 					//使用dimension来判断是否为数组
 					if(($3.type)->dimension == 0) 
 					{
@@ -265,7 +265,7 @@ declaration: declaration ';' identifier_list ':' type
 						{
 							Symbol sym((*($1.names))[i], *($3.type), @$.first_line);
 							// 插入到符号表
-							debugInfo("插入符号 " + sym.toString());
+							debugInfo("插入符号 " + sym.toString(), @$.first_line);
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) 
 							{
@@ -290,7 +290,7 @@ declaration: declaration ';' identifier_list ':' type
 						{
 							Symbol sym((*($1.names))[i], *($3.type), @$.first_line);
 							// 插入到符号表
-							debugInfo("插入符号 " + sym.toString());
+							debugInfo("插入符号 " + sym.toString(), @$.first_line);
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) 
 							{
@@ -313,17 +313,17 @@ declaration: declaration ';' identifier_list ':' type
 
 type: standard_type
 				{
-					debugInfo("进入产生式 type: standard_type");
-					debugInfo("standard_type = " + *($1.targetCode));
+					debugInfo("进入产生式 type: standard_type", @$.first_line);
+					debugInfo("standard_type = " + *($1.targetCode), @$.first_line);
 					$$.type = new Type(*($1.type));
 					$$.targetCode = new string(*($1.targetCode));
 					debugInfoBreak();
 				}
 				| TOK_ARRAY '[' TOK_NUM '.' '.' TOK_NUM ']' TOK_OF standard_type
 				{
-					debugInfo("进入产生式 type: TOK_ARRAY '[' TOK_NUM '.' '.' TOK_NUM ']' TOK_OF standard_type");
+					debugInfo("进入产生式 type: TOK_ARRAY '[' TOK_NUM '.' '.' TOK_NUM ']' TOK_OF standard_type", @$.first_line);
 					debugInfo("TOK_NUM1 = " + *($3.targetCode) + ", TOK_NUM2 = " + *($6.targetCode) + 
-						      ", standard_type = " + *($9.targetCode));
+						      ", standard_type = " + *($9.targetCode), @$.first_line);
 					if($3.isReal || $6.isReal) {
 						yyerror("type -> ARRAY [ NUM . . NUM ] OF standard_type : 数组参数NUM类型错误!", @$.first_line);
 						yyerrok;
@@ -384,16 +384,16 @@ subprogram_declaration: subprogram_head declarations compound_statement
 					$$ = new string(temp);
 					if (!sym_table.ExitScope())
 					{
-						// TODO 错误处理, 退出作用域失败
+						// TODO 错误处理, 退出作用域失败TODO
 					}
-					debugInfo("退出作用域");
+					debugInfo("退出作用域", @$.first_line);
 					debugInfoBreak();
 				};
 
 subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 				{
-					debugInfo("进入产生式 subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'");
-					debugInfo("TOK_ID = " + *($2) + ", arguments = " + *($3.targetCode) + ", ret_type = " + *($5.targetCode));
+					debugInfo("进入产生式 subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'", @$.first_line);
+					debugInfo("TOK_ID = " + *($2) + ", arguments = " + *($3.targetCode) + ", ret_type = " + *($5.targetCode), @$.first_line);
 					// 检查函数名是否重复
 					if (sym_table.getSymbol(*($2)))
 					{
@@ -415,7 +415,7 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 					}
 					func_builder.setDimension(dimension);
 					Symbol func_symbol = func_builder.Build();
-					debugInfo("插入符号 " + func_symbol.toString());
+					debugInfo("插入符号 " + func_symbol.toString(), @$.first_line);
 					if (!sym_table.InsertSymbol(func_symbol).first)
 					{
 						// TODO 错误处理, 插入失败
@@ -426,7 +426,7 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 					{
 						// TODO 错误处理, 进入子作用域失败
 					}
-					debugInfo("进入作用域 " + func_symbol.name);
+					debugInfo("进入作用域 " + func_symbol.name, @$.first_line);
 
 					for (const auto &[type, names] : *($3.paraTypeAndNames))
 					{
@@ -443,7 +443,7 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 							auto temp_builder = params_builder;
 							temp_builder.addName(name);
 							sym_table.InsertSymbol(temp_builder.Build());
-							debugInfo("插入参数符号 " + temp_builder.Build().toString());
+							debugInfo("插入参数符号 " + temp_builder.Build().toString(), @$.first_line);
 						}
 					}
 
@@ -460,8 +460,8 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 				}
 				| TOK_PROCEDURE TOK_ID arguments ';'
 				{
-					debugInfo("进入产生式 subprogram_head: TOK_PROCEDURE TOK_ID arguments ';'");
-					debugInfo("TOK_ID = " + *($2) + ", arguments = " + *($3.targetCode));
+					debugInfo("进入产生式 subprogram_head: TOK_PROCEDURE TOK_ID arguments ';'", @$.first_line);
+					debugInfo("TOK_ID = " + *($2) + ", arguments = " + *($3.targetCode), @$.first_line);
 					// 检查函数名是否重复
 					if (sym_table.getSymbol(*($2)))
 					{
@@ -482,7 +482,7 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 					}
 					func_builder.setDimension(dimension);
 					Symbol func_symbol = func_builder.Build();
-					debugInfo("插入符号 " + func_symbol.toString());
+					debugInfo("插入符号 " + func_symbol.toString(), @$.first_line);
 					if (!sym_table.InsertSymbol(func_symbol).first)
 					{
 						// TODO 错误处理, 插入失败
@@ -493,7 +493,7 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 					{
 						// TODO 错误处理, 进入子作用域失败
 					}
-					debugInfo("进入作用域 " + func_symbol.name);
+					debugInfo("进入作用域 " + func_symbol.name, @$.first_line);
 
 					for (const auto &[type, names] : *($3.paraTypeAndNames))
 					{
@@ -510,7 +510,7 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 							auto temp_builder = params_builder;
 							temp_builder.addName(name);
 							sym_table.InsertSymbol(temp_builder.Build());
-							debugInfo("插入参数符号 " + temp_builder.Build().toString());
+							debugInfo("插入参数符号 " + temp_builder.Build().toString(), @$.first_line);
 						}
 					}
 
@@ -639,9 +639,9 @@ statement_list: statement_list ';' statement
 
 statement: variable TOK_ASSIGNOP expression
 				{
-					debugInfo("进入产生式 statement: variable TOK_ASSIGNOP expression");
+					debugInfo("进入产生式 statement: variable TOK_ASSIGNOP expression", @$.first_line);
 					debugInfo("variable.type = " + $1.type->toString() + ", variable.targetCode = " + *($1.targetCode) +
-							  ", expression.type = " + $3.type->toString() + ", expression.targetCode = " + *($3.targetCode));
+							  ", expression.type = " + $3.type->toString() + ", expression.targetCode = " + *($3.targetCode), @$.first_line);
 					BasicType lhs_type, rhs_type;
 					bool is_return{false};
 					if ($1.type->type == BasicType::CALLABLE)
@@ -652,7 +652,7 @@ statement: variable TOK_ASSIGNOP expression
 					else
 						lhs_type = $1.type->type;
 					rhs_type = $3.type->type;
-					debugInfo("lhs_type = " + BasicTypeStr(lhs_type) + ", rhs_type = " + BasicTypeStr(rhs_type));
+					debugInfo("lhs_type = " + BasicTypeStr(lhs_type) + ", rhs_type = " + BasicTypeStr(rhs_type), @$.first_line);
 
 					if (lhs_type != rhs_type)
 					{
@@ -685,8 +685,8 @@ statement: variable TOK_ASSIGNOP expression
 				}
 				| procedure_call_statement
 				{
-				    debugInfo("进入产生式 statement: procedure_call_statement");
-					debugInfo("pcs = " + *($1));
+				    debugInfo("进入产生式 statement: procedure_call_statement", @$.first_line);
+					debugInfo("pcs = " + *($1), @$.first_line);
 					$$ = new string(*($1) + ";");
 					debugInfoBreak();
 				}
@@ -696,9 +696,9 @@ statement: variable TOK_ASSIGNOP expression
 				}
 				| TOK_IF expression TOK_THEN statement
 				{
-					debugInfo("进入产生式 statement: TOK_IF expression TOK_THEN statement");
+					debugInfo("进入产生式 statement: TOK_IF expression TOK_THEN statement", @$.first_line);
 					debugInfo("expression.type=" + $2.type->toString() + ", expression.targetCode=" + *($2.targetCode) +
-							  ", statement.targetCode=" + *($4));
+							  ", statement.targetCode=" + *($4), @$.first_line);
 					Type expr_type = *($2.type);
 					if (expr_type.type != BasicType::BOOLEAN)
 					{
@@ -716,9 +716,9 @@ statement: variable TOK_ASSIGNOP expression
 				}
 				| TOK_IF expression TOK_THEN statement TOK_ELSE statement
 				{
-					debugInfo("进入产生式 statement: TOK_IF expression TOK_THEN statement");
+					debugInfo("进入产生式 statement: TOK_IF expression TOK_THEN statement", @$.first_line);
 					debugInfo("expression.type=" + $2.type->toString() + ", expression.targetCode=" + *($2.targetCode) +
-							  ", statement1.targetCode=" + *($4) + ", statement2.targetCode=" + *($6));
+							  ", statement1.targetCode=" + *($4) + ", statement2.targetCode=" + *($6), @$.first_line);
 					Type expr_type = *($2.type);
 					if (expr_type.type != BasicType::BOOLEAN)
 					{
@@ -747,21 +747,26 @@ statement: variable TOK_ASSIGNOP expression
 					}
 
 					string temp_code;
-					temp_code.append(string("while (") + *($2.targetCode) + ") ")
+					temp_code.append("while (" + *($2.targetCode) + ") ")
 							 .append("{\n")
 							 .append(*($4) + "\n")
 							 .append("}\n");
+					$$ = new string(temp_code);
 				}
 				| TOK_READ '(' variable_list ')'
 				{
+					debugInfo("进入产生式 statement: TOK_READ '(' variable_list ')'", @$.first_line);
 					string temp_code("cin");
 					for (const auto &[type, name] : *($3.vars))
 						temp_code.append(" >> ")
 								 .append(name);
 					$$ = new string(temp_code + ";");
+					debugInfoBreak();
 				}
 				| TOK_WRITE '(' expr_list ')'
 				{
+					debugInfo("进入产生式 statement: TOK_WRITE '(' expr_list ')'", @$.first_line);
+					debugInfo("expr_list.targetCode=" + *($3.targetCode), @$.first_line);
 					string temp_code("cout");
 					for (int i = 0; i < $3.types->size(); i++)
 					{
@@ -776,23 +781,27 @@ statement: variable TOK_ASSIGNOP expression
 						temp_code.append(" << ")
 								 .append(name);
 					$$ = new string(temp_code + ";");
+					debugInfoBreak();
 				}
 				| TOK_FOR TOK_ID TOK_ASSIGNOP expression TOK_TO expression TOK_DO statement
 				{
 					Symbol *id_sym = sym_table.getSymbol(*($2));
 					if (!id_sym)
 					{
-						// TODO 标识符不存在
+						yyerror("标识符 " + *($2) + " 未定义", @$.first_line);
+						yyerrok;
 					}
 
 					if (id_sym->type.type != BasicType::INTEGER)
 					{
-						// TODO 循环变量类型不正确
+						yyerror("循环变量" + *($2) + "类型不为整数, 实际类型为: " + id_sym->type.toString(), @$.first_line);
+						yyerrok;
 					}
 
 					if ($4.type->type != BasicType::INTEGER || $6.type->type != BasicType::INTEGER)
 					{
-						// TODO 循环界限不为整数
+						yyerror("循环界限类型不为整数", @$.first_line);
+						yyerrok;
 					}
 
 					string temp_code = "for (";
@@ -818,8 +827,8 @@ variable_list: variable_list ',' variable
 
 variable: TOK_ID
 				{
-					debugInfo("进入产生式 variable: TOK_ID");
-					debugInfo("TOK_ID=" + *($1));
+					debugInfo("进入产生式 variable: TOK_ID", @$.first_line);
+					debugInfo("TOK_ID=" + *($1), @$.first_line);
           			Symbol* symbol = sym_table.getSymbol(*($1));
           			if (!symbol) 
 					{
@@ -860,9 +869,9 @@ variable: TOK_ID
 				}
 				| TOK_ID '[' expression ']'
 				{
-					debugInfo("进入产生式 variable: TOK_ID '[' expression ']'");
+					debugInfo("进入产生式 variable: TOK_ID '[' expression ']'", @$.first_line);
 					debugInfo("TOK_ID=" + *($1) + ", expression.type=" + $3.type->toString() +
-							  ", expression.targetCode=" + *($3.targetCode));
+							  ", expression.targetCode=" + *($3.targetCode), @$.first_line);
           			Symbol* symbol = sym_table.getSymbol(*($1));
           			if (!symbol) 
 					{
@@ -883,7 +892,8 @@ variable: TOK_ID
           			  	}
 						else
 						{
-          			    	$$.type = new Type(symbol->type);
+          			    	$$.type = new Type();
+							$$.type->type = symbol->type.type;
           			    	$$.targetCode = new string(*($1) + "[" +  *($3.targetCode) + "-" + to_string(symbol->type.periods[0].first) + "]");
           			  	}
           			}
@@ -892,8 +902,8 @@ variable: TOK_ID
 
 procedure_call_statement: TOK_ID
 				{
-					debugInfo("进入产生式 procedure_call_statement: TOK_ID");
-					debugInfo("TOK_ID = " + *($1));
+					debugInfo("进入产生式 procedure_call_statement: TOK_ID", @$.first_line);
+					debugInfo("TOK_ID = " + *($1), @$.first_line);
           			Symbol* symbol = sym_table.getSymbol(*($1));
           			if (!symbol) 
 					{
@@ -916,8 +926,8 @@ procedure_call_statement: TOK_ID
 				}
 				| TOK_ID '(' expr_list ')'
 				{
-					debugInfo("进入产生式 procedure_call_statement: TOK_ID '(' expr_list ')'");
-					debugInfo("TOK_ID = " + *($1) + ", expr_list = " + *($3.targetCode));
+					debugInfo("进入产生式 procedure_call_statement: TOK_ID '(' expr_list ')'", @$.first_line);
+					debugInfo("TOK_ID = " + *($1) + ", expr_list = " + *($3.targetCode), @$.first_line);
           			Symbol* symbol = sym_table.getSymbol(*($1));
           			if (!symbol) 
 					{
@@ -959,8 +969,8 @@ procedure_call_statement: TOK_ID
 
 expr_list: expr_list ',' expression
 				{
-					debugInfo("进入产生式 expr_list: expr_list ',' expression");
-					debugInfo("expression.targetCode = " + *($3.targetCode) + ", expression.type = " + $3.type->toString());
+					debugInfo("进入产生式 expr_list: expr_list ',' expression", @$.first_line);
+					debugInfo("expression.targetCode = " + *($3.targetCode) + ", expression.type = " + $3.type->toString(), @$.first_line);
           			$$.names = new vector<string>();
           			$$.types = new vector<Type>();
           			for (int i = 0; i < $1.names->size(); i++) 
@@ -975,8 +985,8 @@ expr_list: expr_list ',' expression
 				}
 				| expression
 				{
-					debugInfo("进入产生式 expr_list: expr_list ',' expression");
-					debugInfo("expression.targetCode = " + *($1.targetCode) + ", expression.type = " + $1.type->toString());
+					debugInfo("进入产生式 expr_list: expr_list ',' expression", @$.first_line);
+					debugInfo("expression.targetCode = " + *($1.targetCode) + ", expression.type = " + $1.type->toString(), @$.first_line);
           			$$.names = new vector<string>();
           			$$.types = new vector<Type>();
           			$$.names->push_back(*($1.targetCode));
@@ -1021,10 +1031,10 @@ expression: simple_expr TOK_RELOP simple_expr
 
 simple_expr: simple_expr TOK_ADDOP term
 				{
-					debugInfo("进入产生式 simple_expr: simple_expr TOK_ADDOP term");
+					debugInfo("进入产生式 simple_expr: simple_expr TOK_ADDOP term", @$.first_line);
 					debugInfo("simple_expr.type = " + $1.type->toString() + ", simple_expr.targetCode = " + *($1.targetCode) +
 							  ", TOK_ADDOP = " + *($2) + ", term.type = " + $3.type->toString() + 
-							  ", term.targetCode = " + *($3.targetCode));
+							  ", term.targetCode = " + *($3.targetCode), @$.first_line);
           			if ($1.type->isCallable() || $1.type->isArray()
           			|| $3.type->isCallable() || $3.type->isArray()) 
 					{
@@ -1074,8 +1084,8 @@ simple_expr: simple_expr TOK_ADDOP term
 				}
 				| term
 				{
-					debugInfo("进入产生式 simple_expr: term");
-					debugInfo("term.type = " + $1.type->toString() + ", term.targetCode = " + *($1.targetCode));
+					debugInfo("进入产生式 simple_expr: term", @$.first_line);
+					debugInfo("term.type = " + $1.type->toString() + ", term.targetCode = " + *($1.targetCode), @$.first_line);
           			
 					if ($1.type->isCallable())
 					{
@@ -1089,9 +1099,9 @@ simple_expr: simple_expr TOK_ADDOP term
 				}
 				| sign term
 				{
-					debugInfo("进入产生式 simple_expr: sign term");
+					debugInfo("进入产生式 simple_expr: sign term", @$.first_line);
 					debugInfo("sign = " + *($1) + ", term.type = " + $2.type->toString() +
-							  ", term.targetCode = " + *($2.targetCode));
+							  ", term.targetCode = " + *($2.targetCode), @$.first_line);
          			$$.type = new Type(*($2.type));
          			$$.targetCode = new string(*($1) + *($2.targetCode));
 					debugInfoBreak();
@@ -1099,10 +1109,10 @@ simple_expr: simple_expr TOK_ADDOP term
 
 term: term TOK_MULOP factor
 				{
-					debugInfo("进入产生式 term: term TOK_MULOP factor");
+					debugInfo("进入产生式 term: term TOK_MULOP factor", @$.first_line);
 					debugInfo("term.type = " + $1.type->toString() + ", term.targetCode = " + *($1.targetCode) +
 							  ", TOK_MULOP = " + *($2) + ", factor.type = " + $3.type->toString() + 
-							  ", factor.targetCode = " + *($3.targetCode));
+							  ", factor.targetCode = " + *($3.targetCode), @$.first_line);
           			if ($1.type->isCallable() || $1.type->isArray() ||
 					    $3.type->isCallable() || $3.type->isArray()) 
 					{
@@ -1180,8 +1190,8 @@ term: term TOK_MULOP factor
 				}
 				| factor
 				{
-					debugInfo("进入产生式 term: factor");
-					debugInfo("factor.type = " + $1.type->toString() + ", factor.targetCode = " + *($1.targetCode));
+					debugInfo("进入产生式 term: factor", @$.first_line);
+					debugInfo("factor.type = " + $1.type->toString() + ", factor.targetCode = " + *($1.targetCode), @$.first_line);
           			$$.type = new Type(*($1.type));
           			$$.targetCode = new string(*($1.targetCode));
 					debugInfoBreak();
@@ -1189,8 +1199,8 @@ term: term TOK_MULOP factor
 
 factor: TOK_ID
 				{
-					debugInfo("进入产生式 factor: TOK_ID");
-					debugInfo("TOK_ID = " + *($1));
+					debugInfo("进入产生式 factor: TOK_ID", @$.first_line);
+					debugInfo("TOK_ID = " + *($1), @$.first_line);
           			Symbol* symbol = sym_table.getSymbol(*($1));
           			if (!symbol) 
 					{
@@ -1231,8 +1241,8 @@ factor: TOK_ID
 				}
 				| TOK_ID '(' expr_list ')'
 				{
-					debugInfo("进入产生式 factor: TOK_ID '(' expr_list ')'");
-					debugInfo("TOK_ID = " + *($1) + ", expr_list.targetCode=" + *($3.targetCode));
+					debugInfo("进入产生式 factor: TOK_ID '(' expr_list ')'", @$.first_line);
+					debugInfo("TOK_ID = " + *($1) + ", expr_list.targetCode=" + *($3.targetCode), @$.first_line);
           			Symbol* symbol = sym_table.getSymbol(*($1));
           			if (symbol == nullptr) 
 					{
@@ -1283,8 +1293,8 @@ factor: TOK_ID
 				}
 				| TOK_ID '[' expression ']'
 				{
-					debugInfo("进入产生式 factor: TOK_ID '[' expression ']'");
-					debugInfo("TOK_ID = " + *($1) + ", expression.type=" + $3.type->toString() +  ", expression.targetCode=" + *($3.targetCode));
+					debugInfo("进入产生式 factor: TOK_ID '[' expression ']'", @$.first_line);
+					debugInfo("TOK_ID = " + *($1) + ", expression.type=" + $3.type->toString() +  ", expression.targetCode=" + *($3.targetCode), @$.first_line);
 					if ($3.type->type != BasicType::INTEGER)
 					{
 						yyerror("数组下标访问必须使用整数", @$.first_line);
@@ -1314,8 +1324,8 @@ factor: TOK_ID
 				}
 				| TOK_NUM
 				{
-					debugInfo("进入产生式 factor: TOK_NUM");
-					debugInfo("TOK_NUM.isReal=" + to_string($1.isReal) + ", TOK_NUM.targetCode=" + *($1.targetCode));
+					debugInfo("进入产生式 factor: TOK_NUM", @$.first_line);
+					debugInfo("TOK_NUM.isReal=" + to_string($1.isReal) + ", TOK_NUM.targetCode=" + *($1.targetCode), @$.first_line);
 
 					$$.type = new Type();
 					$$.targetCode = new string(*($1.targetCode));
@@ -1356,13 +1366,34 @@ factor: TOK_ID
 				}
 				| TOK_CHAR_LIT
 				{
-					debugInfo("进入作用域 factor: TOK_CHAR_LIT");
-					debugInfo("TOK_CHAR_LIT=" + *($1));
+					debugInfo("进入作用域 factor: TOK_CHAR_LIT", @$.first_line);
+					debugInfo("TOK_CHAR_LIT=" + *($1), @$.first_line);
 					$$.type = new Type();
 					$$.type->type = BasicType::CHAR;
 					$$.type->is_constant = true;
-					$$.targetCode = new string(*($1));
 
+
+					// TODO 改进字符串
+					string temp_string;
+					int size = $1->size();
+					if (size == 3 || (size == 4 && $1->at(1) == '\\' )) // 是字符
+					{
+						temp_string = *($1);
+					}
+					else
+					{
+						temp_string.push_back('"');
+						for (int i = 1; i < size; i++)
+						{
+							if ($1->at(i) == '"')
+								temp_string.append("\\\"");
+							else
+								temp_string.push_back($1->at(i));
+						}
+						temp_string.pop_back(); // 弹出单引号
+						temp_string.push_back('"');
+					}
+					$$.targetCode = new string(temp_string);
 				};
 
 sign: '+'

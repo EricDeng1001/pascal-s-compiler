@@ -1,4 +1,4 @@
-%option yylineno
+%option yylineno caseless
 %{
 #include <string>
 #include <vector>
@@ -12,7 +12,7 @@ using namespace std;
 %}
 
 
-white_space       [ \t\n]+
+white_space       [ \t\n\r]+
 digit             [0-9]
 digits		      [0-9]+
 fraction          (\.{digits})?
@@ -21,7 +21,7 @@ num               {digits}{fraction}{exponent}
 
 letter            [A-Za-z]
 id                {letter}({letter}|{digit})*
-charliteral       '([A-Za-z ]|(\\n))'
+charliteral       '([A-Za-z :,\.]|(\\n)|(\\t))+'
 block_annotation  \{\*.*\*\}
 line_annotation   \{.*\}
 annotation        {block_annotation}|{line_annotation}
