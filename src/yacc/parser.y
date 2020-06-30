@@ -271,22 +271,39 @@ declaration: declaration ';' identifier_list ':' type
 						string tmp_target = *($5.targetCode);
 						for(int i = 0; i < ($3.names)->size(); i++)
 						{
-
 							Symbol sym((*($3.names))[i], *($5.type));
-							// 插入到符号表
-							debugInfo("插入符号 " + sym.toString());
-							pair<bool, int> res = sym_table.InsertSymbol(sym);
-							if(res.first == false) 
+							if (!sym_table.isInGlobalScope())
 							{
-								yyerror("符号 " + sym.name + " 重复定义");
-								yyerrok;
-							}
-							else 
-							{	// 生成目标代码
-								if(i != ($3.names)->size() - 1)
-									tmp_target += " " + (*($3.names))[i] + ",";
+								const Symbol *const parent = sym_table.getParentSymbol();
+								if (parent->name == sym.name || sym_table.isInScope(sym.name))
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
 								else
-									tmp_target += " " + (*($3.names))[i] + ";\n";
+								{
+									sym_table.InsertSymbol(sym);
+									if(i != ($3.names)->size() - 1)
+										tmp_target += " " + (*($3.names))[i] + ",";
+									else
+										tmp_target += " " + (*($3.names))[i] + ";\n";
+								}
+							}
+							else
+							{
+								// 插入到符号表
+								debugInfo("插入符号 " + sym.toString());
+								pair<bool, int> res = sym_table.InsertSymbol(sym);
+								if(res.first == false) 
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else 
+								{	// 生成目标代码
+									if(i != ($3.names)->size() - 1)
+										tmp_target += " " + (*($3.names))[i] + ",";
+									else
+										tmp_target += " " + (*($3.names))[i] + ";\n";
+								}
 							}
 						}
 						$$ = new string(*($1) + tmp_target);
@@ -297,21 +314,39 @@ declaration: declaration ';' identifier_list ':' type
 						for(int i = 0; i < ($3.names)->size(); i++) 
 						{
 							Symbol sym((*($3.names))[i], *($5.type));
-							// 插入到符号表
-							pair<bool, int> res = sym_table.InsertSymbol(sym);
-							debugInfo("插入符号 " + sym.toString());
-							if(res.first == false) 
+							if (!sym_table.isInGlobalScope())
 							{
-								yyerror("符号 " + sym.name + " 重复定义");
-								yyerrok;
-							}
-							else 
-							{	// 生成目标代码
-								string target = to_string($5.arrayTop - $5.arrayBottom + 1);
-								if(i != ($3.names)->size() - 1)
-									tmp_target += " " + (*($3.names))[i] + "[" + target + "],";
+								const Symbol *const parent = sym_table.getParentSymbol();
+								if (parent->name == sym.name || sym_table.isInScope(sym.name))
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
 								else
-									tmp_target += " " + (*($3.names))[i] + "[" + target + "];\n";
+								{
+									sym_table.InsertSymbol(sym);
+									string target = to_string($5.arrayTop - $5.arrayBottom + 1);
+									if(i != ($3.names)->size() - 1)
+										tmp_target += " " + (*($3.names))[i] + "[" + target + "],";
+									else
+										tmp_target += " " + (*($3.names))[i] + "[" + target + "];\n";
+								}
+							}
+							else
+							{
+								pair<bool, int> res = sym_table.InsertSymbol(sym);
+								debugInfo("插入符号 " + sym.toString());
+								if(res.first == false) 
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else 
+								{	// 生成目标代码
+									string target = to_string($5.arrayTop - $5.arrayBottom + 1);
+									if(i != ($3.names)->size() - 1)
+										tmp_target += " " + (*($3.names))[i] + "[" + target + "],";
+									else
+										tmp_target += " " + (*($3.names))[i] + "[" + target + "];\n";
+								}
 							}
 						}
 						$$ = new string(*($1) + tmp_target);
@@ -331,21 +366,39 @@ declaration: declaration ';' identifier_list ':' type
 						string tmp_target = *($5.targetCode);
 						for(int i = 0; i < ($3.names)->size(); i++)
 						{
-
 							Symbol sym((*($3.names))[i], *($5.type));
-							// 插入到符号表
-							debugInfo("插入符号 " + sym.toString());
-							pair<bool, int> res = sym_table.InsertSymbol(sym);
-							if(res.first == false) 
+							if (!sym_table.isInGlobalScope())
 							{
-								yyerror("符号 " + sym.name + " 重复定义");
-							}
-							else 
-							{	// 生成目标代码
-								if(i != ($3.names)->size() - 1)
-									tmp_target += " " + (*($3.names))[i] + ",";
+								const Symbol *const parent = sym_table.getParentSymbol();
+								if (parent->name == sym.name || sym_table.isInScope(sym.name))
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
 								else
-									tmp_target += " " + (*($3.names))[i] + ";\n";
+								{
+									sym_table.InsertSymbol(sym);
+									if(i != ($3.names)->size() - 1)
+										tmp_target += " " + (*($3.names))[i] + ",";
+									else
+										tmp_target += " " + (*($3.names))[i] + ";\n";
+								}
+							}
+							else
+							{
+								// 插入到符号表
+								debugInfo("插入符号 " + sym.toString());
+								pair<bool, int> res = sym_table.InsertSymbol(sym);
+								if(res.first == false) 
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else 
+								{	// 生成目标代码
+									if(i != ($3.names)->size() - 1)
+										tmp_target += " " + (*($3.names))[i] + ",";
+									else
+										tmp_target += " " + (*($3.names))[i] + ";\n";
+								}
 							}
 						}
 						$$ = new string(*($1) + tmp_target);
@@ -356,20 +409,39 @@ declaration: declaration ';' identifier_list ':' type
 						for(int i = 0; i < ($3.names)->size(); i++) 
 						{
 							Symbol sym((*($3.names))[i], *($5.type));
-							// 插入到符号表
-							pair<bool, int> res = sym_table.InsertSymbol(sym);
-							debugInfo("插入符号 " + sym.toString());
-							if(res.first == false) 
+							if (!sym_table.isInGlobalScope())
 							{
-								yyerror("符号 " + sym.name + " 重复定义");
-							}
-							else 
-							{	// 生成目标代码
-								string target = to_string($5.arrayTop - $5.arrayBottom + 1);
-								if(i != ($3.names)->size() - 1)
-									tmp_target += " " + (*($3.names))[i] + "[" + target + "],";
+								const Symbol *const parent = sym_table.getParentSymbol();
+								if (parent->name == sym.name || sym_table.isInScope(sym.name))
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
 								else
-									tmp_target += " " + (*($3.names))[i] + "[" + target + "];\n";
+								{
+									sym_table.InsertSymbol(sym);
+									string target = to_string($5.arrayTop - $5.arrayBottom + 1);
+									if(i != ($3.names)->size() - 1)
+										tmp_target += " " + (*($3.names))[i] + "[" + target + "],";
+									else
+										tmp_target += " " + (*($3.names))[i] + "[" + target + "];\n";
+								}
+							}
+							else
+							{
+								pair<bool, int> res = sym_table.InsertSymbol(sym);
+								debugInfo("插入符号 " + sym.toString());
+								if(res.first == false) 
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else 
+								{	// 生成目标代码
+									string target = to_string($5.arrayTop - $5.arrayBottom + 1);
+									if(i != ($3.names)->size() - 1)
+										tmp_target += " " + (*($3.names))[i] + "[" + target + "],";
+									else
+										tmp_target += " " + (*($3.names))[i] + "[" + target + "];\n";
+								}
 							}
 						}
 						$$ = new string(*($1) + tmp_target);
@@ -380,7 +452,7 @@ declaration: declaration ';' identifier_list ':' type
 				{
 					debugInfo("进入产生式 declaration: declaration error identifier_list ':' type");
 					debugInfo("type = " + *($5.targetCode));
-					syntax_err_suply("变量声明的类型前缺少分号");
+					syntax_err_suply("变量声明的类型前缺少冒号");
 					yyerrok;
 					//使用dimension来判断是否为数组
 					if(($5.type)->dimension == 0) 
@@ -388,21 +460,39 @@ declaration: declaration ';' identifier_list ':' type
 						string tmp_target = *($5.targetCode);
 						for(int i = 0; i < ($3.names)->size(); i++)
 						{
-
 							Symbol sym((*($3.names))[i], *($5.type));
-							// 插入到符号表
-							debugInfo("插入符号 " + sym.toString());
-							pair<bool, int> res = sym_table.InsertSymbol(sym);
-							if(res.first == false) 
+							if (!sym_table.isInGlobalScope())
 							{
-								yyerror("符号 " + sym.name + " 重复定义");
-							}
-							else 
-							{	// 生成目标代码
-								if(i != ($3.names)->size() - 1)
-									tmp_target += " " + (*($3.names))[i] + ",";
+								const Symbol *const parent = sym_table.getParentSymbol();
+								if (parent->name == sym.name || sym_table.isInScope(sym.name))
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
 								else
-									tmp_target += " " + (*($3.names))[i] + ";\n";
+								{
+									sym_table.InsertSymbol(sym);
+									if(i != ($3.names)->size() - 1)
+										tmp_target += " " + (*($3.names))[i] + ",";
+									else
+										tmp_target += " " + (*($3.names))[i] + ";\n";
+								}
+							}
+							else
+							{
+								// 插入到符号表
+								debugInfo("插入符号 " + sym.toString());
+								pair<bool, int> res = sym_table.InsertSymbol(sym);
+								if(res.first == false) 
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else 
+								{	// 生成目标代码
+									if(i != ($3.names)->size() - 1)
+										tmp_target += " " + (*($3.names))[i] + ",";
+									else
+										tmp_target += " " + (*($3.names))[i] + ";\n";
+								}
 							}
 						}
 						$$ = new string(*($1) + tmp_target);
@@ -413,20 +503,39 @@ declaration: declaration ';' identifier_list ':' type
 						for(int i = 0; i < ($3.names)->size(); i++) 
 						{
 							Symbol sym((*($3.names))[i], *($5.type));
-							// 插入到符号表
-							pair<bool, int> res = sym_table.InsertSymbol(sym);
-							debugInfo("插入符号 " + sym.toString());
-							if(res.first == false) 
+							if (!sym_table.isInGlobalScope())
 							{
-								yyerror("符号 " + sym.name + " 重复定义");
-							}
-							else 
-							{	// 生成目标代码
-								string target = to_string($5.arrayTop - $5.arrayBottom + 1);
-								if(i != ($3.names)->size() - 1)
-									tmp_target += " " + (*($3.names))[i] + "[" + target + "],";
+								const Symbol *const parent = sym_table.getParentSymbol();
+								if (parent->name == sym.name || sym_table.isInScope(sym.name))
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
 								else
-									tmp_target += " " + (*($3.names))[i] + "[" + target + "];\n";
+								{
+									sym_table.InsertSymbol(sym);
+									string target = to_string($5.arrayTop - $5.arrayBottom + 1);
+									if(i != ($3.names)->size() - 1)
+										tmp_target += " " + (*($3.names))[i] + "[" + target + "],";
+									else
+										tmp_target += " " + (*($3.names))[i] + "[" + target + "];\n";
+								}
+							}
+							else
+							{
+								pair<bool, int> res = sym_table.InsertSymbol(sym);
+								debugInfo("插入符号 " + sym.toString());
+								if(res.first == false) 
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else 
+								{	// 生成目标代码
+									string target = to_string($5.arrayTop - $5.arrayBottom + 1);
+									if(i != ($3.names)->size() - 1)
+										tmp_target += " " + (*($3.names))[i] + "[" + target + "],";
+									else
+										tmp_target += " " + (*($3.names))[i] + "[" + target + "];\n";
+								}
 							}
 						}
 						$$ = new string(*($1) + tmp_target);
@@ -438,114 +547,184 @@ declaration: declaration ';' identifier_list ':' type
 					debugInfo("进入产生式 declaration: identifier_list ':' type");
 					debugInfo("type = " + $3.type->toString());
 					//使用dimension来判断是否为数组
+					string tmp_target = *($3.targetCode);
 					if(($3.type)->dimension == 0) 
 					{
-						string tmp_target = *($3.targetCode);
 						for(int i = 0; i < ($1.names)->size(); i++) 
 						{
 							Symbol sym((*($1.names))[i], *($3.type));
 							// 插入到符号表
-							debugInfo("插入符号 " + sym.toString());
-							pair<bool, int> res = sym_table.InsertSymbol(sym);
-							if(res.first == false) 
+							if (!sym_table.isInGlobalScope())
 							{
-								yyerror("符号 " + sym.name + " 重复定义");
-								yyerrok;
-							}
-							else 
-							{	// 生成目标代码
-								if(i != ($1.names)->size() - 1)
-									tmp_target += " " + (*($1.names))[i] + ",";
+								const Symbol *const parent = sym_table.getParentSymbol();
+								if (parent->name == sym.name || sym_table.isInScope(sym.name))
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
 								else
-									tmp_target += " " + (*($1.names))[i] + ";\n";
+								{
+									sym_table.InsertSymbol(sym);
+									if(i != ($1.names)->size() - 1)
+										tmp_target += " " + (*($1.names))[i] + ",";
+									else
+										tmp_target += " " + (*($1.names))[i] + ";\n";
+								}
+							}
+							else
+							{
+								debugInfo("插入符号 " + sym.toString());
+								pair<bool, int> res = sym_table.InsertSymbol(sym);
+								if(res.first == false) 
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else 
+								{	// 生成目标代码
+									if(i != ($1.names)->size() - 1)
+										tmp_target += " " + (*($1.names))[i] + ",";
+									else
+										tmp_target += " " + (*($1.names))[i] + ";\n";
+								}
 							}
 						}
-						$$ = new string(tmp_target);
-						debugInfoBreak();
 					}
 					else if(($3.type)->dimension > 0)
 					{
-						string tmp_target = string(($3.targetCode)->data());
 						for(int i = 0; i < ($1.names)->size(); i++) 
 						{
 							Symbol sym((*($1.names))[i], *($3.type));
-							// 插入到符号表
-							debugInfo("插入符号 " + sym.toString());
-							pair<bool, int> res = sym_table.InsertSymbol(sym);
-							if(res.first == false) 
+							if (!sym_table.isInGlobalScope())
 							{
-								yyerror("符号 " + sym.name + " 重复定义");
-								yyerrok;
-							}
-							else 
-							{	// 生成目标代码
-								string target = to_string($3.arrayTop - $3.arrayBottom  + 1);
-								if(i != ($1.names)->size() - 1)
-									tmp_target += " " + (*($1.names))[i] + "[" + target + "],";
+								const Symbol *const parent = sym_table.getParentSymbol();
+								if (parent->name == sym.name || sym_table.isInScope(sym.name))
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
 								else
-									tmp_target += " " + (*($1.names))[i] + "[" + target + "];\n";
+								{
+									sym_table.InsertSymbol(sym);
+									string target = to_string($3.arrayTop - $3.arrayBottom  + 1);
+									if(i != ($1.names)->size() - 1)
+										tmp_target += " " + (*($1.names))[i] + "[" + target + "],";
+									else
+										tmp_target += " " + (*($1.names))[i] + "[" + target + "];\n";
+								}
+							}
+							else
+							{
+								// 插入到符号表
+								debugInfo("插入符号 " + sym.toString());
+								pair<bool, int> res = sym_table.InsertSymbol(sym);
+								if(res.first == false) 
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else 
+								{	// 生成目标代码
+									string target = to_string($3.arrayTop - $3.arrayBottom  + 1);
+									if(i != ($1.names)->size() - 1)
+										tmp_target += " " + (*($1.names))[i] + "[" + target + "],";
+									else
+										tmp_target += " " + (*($1.names))[i] + "[" + target + "];\n";
+								}
 							}
 						}
-						$$ = new string(tmp_target);
-						debugInfoBreak();
 					}
+					$$ = new string(tmp_target);
+					debugInfoBreak();
 				}
 				| identifier_list error type
 				{
 					debugInfo("进入产生式 declaration: identifier_list ':' type");
 					debugInfo("type = " + $3.type->toString());
-					syntax_err_suply("变量声明的类型前缺少分号");
+					syntax_err_suply("变量声明的类型前缺少冒号");
 					yyerrok;
 					//使用dimension来判断是否为数组
+					string tmp_target = *($3.targetCode);
 					if(($3.type)->dimension == 0) 
 					{
-						string tmp_target = *($3.targetCode);
 						for(int i = 0; i < ($1.names)->size(); i++) 
 						{
 							Symbol sym((*($1.names))[i], *($3.type));
 							// 插入到符号表
-							debugInfo("插入符号 " + sym.toString());
-							pair<bool, int> res = sym_table.InsertSymbol(sym);
-							if(res.first == false) 
+							if (!sym_table.isInGlobalScope())
 							{
-								yyerror("符号 " + sym.name + " 重复定义");
-							}
-							else 
-							{	// 生成目标代码
-								if(i != ($1.names)->size() - 1)
-									tmp_target += " " + (*($1.names))[i] + ",";
+								const Symbol *const parent = sym_table.getParentSymbol();
+								if (parent->name == sym.name || sym_table.isInScope(sym.name))
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
 								else
-									tmp_target += " " + (*($1.names))[i] + ";\n";
+								{
+									sym_table.InsertSymbol(sym);
+									if(i != ($1.names)->size() - 1)
+										tmp_target += " " + (*($1.names))[i] + ",";
+									else
+										tmp_target += " " + (*($1.names))[i] + ";\n";
+								}
+							}
+							else
+							{
+								debugInfo("插入符号 " + sym.toString());
+								pair<bool, int> res = sym_table.InsertSymbol(sym);
+								if(res.first == false) 
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else 
+								{	// 生成目标代码
+									if(i != ($1.names)->size() - 1)
+										tmp_target += " " + (*($1.names))[i] + ",";
+									else
+										tmp_target += " " + (*($1.names))[i] + ";\n";
+								}
 							}
 						}
-						$$ = new string(tmp_target);
-						debugInfoBreak();
 					}
 					else if(($3.type)->dimension > 0)
 					{
-						string tmp_target = string(($3.targetCode)->data());
 						for(int i = 0; i < ($1.names)->size(); i++) 
 						{
 							Symbol sym((*($1.names))[i], *($3.type));
-							// 插入到符号表
-							debugInfo("插入符号 " + sym.toString());
-							pair<bool, int> res = sym_table.InsertSymbol(sym);
-							if(res.first == false) 
+							if (!sym_table.isInGlobalScope())
 							{
-								yyerror("符号 " + sym.name + " 重复定义");
-							}
-							else 
-							{	// 生成目标代码
-								string target = to_string($3.arrayTop - $3.arrayBottom  + 1);
-								if(i != ($1.names)->size() - 1)
-									tmp_target += " " + (*($1.names))[i] + "[" + target + "],";
+								const Symbol *const parent = sym_table.getParentSymbol();
+								if (parent->name == sym.name || sym_table.isInScope(sym.name))
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
 								else
-									tmp_target += " " + (*($1.names))[i] + "[" + target + "];\n";
+								{
+									sym_table.InsertSymbol(sym);
+									string target = to_string($3.arrayTop - $3.arrayBottom  + 1);
+									if(i != ($1.names)->size() - 1)
+										tmp_target += " " + (*($1.names))[i] + "[" + target + "],";
+									else
+										tmp_target += " " + (*($1.names))[i] + "[" + target + "];\n";
+								}
+							}
+							else
+							{
+								// 插入到符号表
+								debugInfo("插入符号 " + sym.toString());
+								pair<bool, int> res = sym_table.InsertSymbol(sym);
+								if(res.first == false) 
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else 
+								{	// 生成目标代码
+									string target = to_string($3.arrayTop - $3.arrayBottom  + 1);
+									if(i != ($1.names)->size() - 1)
+										tmp_target += " " + (*($1.names))[i] + "[" + target + "],";
+									else
+										tmp_target += " " + (*($1.names))[i] + "[" + target + "];\n";
+								}
 							}
 						}
-						$$ = new string(tmp_target);
-						debugInfoBreak();
 					}
+					$$ = new string(tmp_target);
+					debugInfoBreak();
 				};
 
 type: standard_type
@@ -556,6 +735,15 @@ type: standard_type
 					$$.targetCode = new string(*($1.targetCode));
 					debugInfoBreak();
 				}
+				| error
+				{
+					debugInfo("进入产生式 standard_type: error");
+					$$.type = new Type();
+					$$.type->type = BasicType::INVALID;
+					$$.targetCode = new string("invalid");
+					syntax_err_suply("无效的基本类型");
+					debugInfoBreak();
+				}
 				| TOK_ARRAY '[' TOK_NUM '.' '.' TOK_NUM ']' TOK_OF standard_type
 				{
 					debugInfo("进入产生式 type: TOK_ARRAY '[' TOK_NUM '.' '.' TOK_NUM ']' TOK_OF standard_type");
@@ -564,7 +752,28 @@ type: standard_type
 					if($3.isReal || $6.isReal) 
 					{
 						yyerror("数组参数NUM类型不为整型");
-						yyerrok;
+					}
+					$$.type = new Type(*($9.type));
+					$$.arrayTop = (int)(atoi($6.targetCode->c_str()));
+					$$.arrayBottom = (int)(atoi($3.targetCode->c_str()));
+					$$.type->dimension = 1;
+					$$.type->periods.push_back({$$.arrayBottom, $$.arrayTop});
+					if ($$.arrayTop - $$.arrayBottom < 0) 
+					{
+						yyerror("数组下界小于上界");
+					}
+					$$.targetCode = new string(*($9.targetCode));
+					debugInfoBreak();
+				}
+				| TOK_ARRAY error TOK_NUM '.' '.' TOK_NUM error TOK_OF standard_type
+				{
+					debugInfo("进入产生式 type: TOK_ARRAY '[' TOK_NUM '.' '.' TOK_NUM ']' TOK_OF standard_type");
+					debugInfo("TOK_NUM1 = " + *($3.targetCode) + ", TOK_NUM2 = " + *($6.targetCode) + 
+						      ", standard_type = " + *($9.targetCode));
+					syntax_err_suply("数组声明缺少中括号包围");
+					if ($3.isReal || $6.isReal) 
+					{
+						yyerror("数组参数NUM类型不为整型");
 					}
 					$$.type = new Type(*($9.type));
 					$$.arrayTop = (int)(atoi($6.targetCode->c_str()));
@@ -574,12 +783,80 @@ type: standard_type
 					if($$.arrayTop - $$.arrayBottom < 0) 
 					{
 						yyerror("数组下界小于上界");
-						yyerrok;
 					}
 					$$.targetCode = new string(*($9.targetCode));
 					debugInfoBreak();
-				};
-
+				}
+				| TOK_ARRAY '[' TOK_NUM error TOK_NUM ']' TOK_OF standard_type
+				{
+					debugInfo("进入产生式 type: TOK_ARRAY '[' TOK_NUM '.' '.' TOK_NUM ']' TOK_OF standard_type");
+					debugInfo("TOK_NUM1 = " + *($3.targetCode) + ", TOK_NUM2 = " + *($5.targetCode) + 
+						      ", standard_type = " + *($8.targetCode));
+					syntax_err_suply("数组声明缺少 ..");
+					yyerrok;
+					if ($3.isReal || $5.isReal) 
+					{
+						yyerror("数组参数NUM类型不为整型");
+					}
+					$$.type = new Type(*($8.type));
+					$$.arrayTop = (int)(atoi($5.targetCode->c_str()));
+					$$.arrayBottom = (int)(atoi($3.targetCode->c_str()));
+					$$.type->dimension = 1;
+					$$.type->periods.push_back({$$.arrayBottom, $$.arrayTop});
+					if($$.arrayTop - $$.arrayBottom < 0) 
+					{
+						yyerror("数组下界小于上界");
+					}
+					$$.targetCode = new string(*($8.targetCode));
+					debugInfoBreak();
+				}
+				| TOK_ARRAY '[' TOK_NUM '.' error TOK_NUM ']' TOK_OF standard_type
+				{
+					debugInfo("进入产生式 type: TOK_ARRAY '[' TOK_NUM '.' '.' TOK_NUM ']' TOK_OF standard_type");
+					debugInfo("TOK_NUM1 = " + *($3.targetCode) + ", TOK_NUM2 = " + *($6.targetCode) + 
+						      ", standard_type = " + *($9.targetCode));
+					syntax_err_suply("数组声明缺少 ..");
+					yyerrok;
+					if ($3.isReal || $6.isReal) 
+					{
+						yyerror("数组参数NUM类型不为整型");
+					}
+					$$.type = new Type(*($9.type));
+					$$.arrayTop = (int)(atoi($6.targetCode->c_str()));
+					$$.arrayBottom = (int)(atoi($3.targetCode->c_str()));
+					$$.type->dimension = 1;
+					$$.type->periods.push_back({$$.arrayBottom, $$.arrayTop});
+					if($$.arrayTop - $$.arrayBottom < 0) 
+					{
+						yyerror("数组下界小于上界");
+					}
+					$$.targetCode = new string(*($9.targetCode));
+					debugInfoBreak();
+				}
+				| TOK_ARRAY '[' TOK_NUM error '.' TOK_NUM ']' TOK_OF standard_type
+				{
+					debugInfo("进入产生式 type: TOK_ARRAY '[' TOK_NUM '.' '.' TOK_NUM ']' TOK_OF standard_type");
+					debugInfo("TOK_NUM1 = " + *($3.targetCode) + ", TOK_NUM2 = " + *($6.targetCode) + 
+						      ", standard_type = " + *($9.targetCode));
+					syntax_err_suply("数组声明缺少 ..");
+					yyerrok;
+					if ($3.isReal || $6.isReal) 
+					{
+						yyerror("数组参数NUM类型不为整型");
+					}
+					$$.type = new Type(*($9.type));
+					$$.arrayTop = (int)(atoi($6.targetCode->c_str()));
+					$$.arrayBottom = (int)(atoi($3.targetCode->c_str()));
+					$$.type->dimension = 1;
+					$$.type->periods.push_back({$$.arrayBottom, $$.arrayTop});
+					if($$.arrayTop - $$.arrayBottom < 0) 
+					{
+						yyerror("数组下界小于上界");
+					}
+					$$.targetCode = new string(*($9.targetCode));
+					debugInfoBreak();
+				}
+				;
 standard_type: TOK_INTEGER
 				{
 					debugInfo("进入产生式 standard_type: TOK_INTEGER");
@@ -612,10 +889,20 @@ standard_type: TOK_INTEGER
 					$$.targetCode = new string("char");
 					debugInfoBreak();
 				};
+				
 
 subprogram_declarations: subprogram_declarations subprogram_declaration ';'
 				{
 					debugInfo("进入产生式 subprogram_declarations: subprogram_declarations subprogram_declaration ';'");
+					string temp = *($1) + "\n" + *($2);
+					$$ = new string(temp);
+					debugInfoBreak();
+				}
+				| subprogram_declarations subprogram_declaration error
+				{
+					debugInfo("进入产生式 subprogram_declarations: subprogram_declarations subprogram_declaration error");
+					syntax_err_suply("子程序声明后缺少分号");
+					yyerrok;
 					string temp = *($1) + "\n" + *($2);
 					$$ = new string(temp);
 					debugInfoBreak();
@@ -650,7 +937,6 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 					if (sym_table.getSymbol(*($2)))
 					{
 						yyerror("重复的标识符 " + *($2));
-						yyerrok;
 					}
 					else
 					{
@@ -691,7 +977,6 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 								if (sym_table.isInScope(name) || name == func_symbol.name)
 								{
 									yyerror("重复的标识符 " + name);
-									yyerrok;
 								}
 								else
 								{
@@ -706,6 +991,213 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 
 					string temp_code = *($5.targetCode) + " " + *($2) + *($3.targetCode);
 					$$ = new string(temp_code);
+					debugInfoBreak();
+				}
+				| TOK_FUNCTION TOK_ID arguments ':' standard_type error
+				{
+					debugInfo("进入产生式 subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'");
+					debugInfo("TOK_ID = " + *($2) + ", arguments = " + *($3.targetCode) + ", ret_type = " + *($5.targetCode));
+					// 检查函数名是否重复
+					syntax_err_suply("函数声明末尾缺少分号");
+					yyerrok;
+					if (sym_table.getSymbol(*($2)))
+					{
+						yyerror("重复的标识符 " + *($2));
+					}
+					else
+					{
+						SymbolBuilder func_builder = Symbol::getSymbolBuilder();
+						func_builder.addName(*($2))
+									.setBasicType(BasicType::CALLABLE)
+							   		.setRetType($5.type->type)
+									.setDefAt(@$.first_line);
+
+						int dimension = 0;
+						for (const auto &[type, names] : *($3.paraTypeAndNames))
+						{
+							func_builder.addArg(type);
+							dimension += names.size();
+						}
+						func_builder.setDimension(dimension);
+						Symbol func_symbol = func_builder.Build();
+						debugInfo("插入符号 " + func_symbol.toString());
+						if (!sym_table.InsertSymbol(func_symbol).first)
+						{
+							// TODO 错误处理, 插入失败
+						}
+
+						// 向符号表中添加参数
+						if (!sym_table.EnterScope(func_symbol.name))
+						{
+							// TODO 错误处理, 进入子作用域失败
+						}
+						debugInfo("进入作用域 " + func_symbol.name);
+
+						for (const auto &[type, names] : *($3.paraTypeAndNames))
+						{
+							// 检查名字是否冲突
+							SymbolBuilder params_builder = Symbol::getSymbolBuilder();
+							params_builder.setType(type).setDefAt(@$.first_line);
+							for (const auto &name : names)
+							{
+								if (sym_table.isInScope(name) || name == func_symbol.name)
+								{
+									yyerror("重复的标识符 " + name);
+								}
+								else
+								{
+									auto temp_builder = params_builder;
+									temp_builder.addName(name);
+									sym_table.InsertSymbol(temp_builder.Build());
+									debugInfo("插入参数符号 " + temp_builder.Build().toString());
+								}
+							}
+						}
+					}
+
+					string temp_code = *($5.targetCode) + " " + *($2) + *($3.targetCode);
+					$$ = new string(temp_code);
+					debugInfoBreak();
+				}
+				| TOK_FUNCTION TOK_ID arguments error standard_type ';'
+				{
+					debugInfo("进入产生式 subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'");
+					debugInfo("TOK_ID = " + *($2) + ", arguments = " + *($3.targetCode) + ", ret_type = " + *($5.targetCode));
+					// 检查函数名是否重复
+					syntax_err_suply("函数声明中参数列表和返回类型间缺少冒号分隔");
+					yyerrok;
+					if (sym_table.getSymbol(*($2)))
+					{
+						yyerror("重复的标识符 " + *($2));
+					}
+					else
+					{
+						SymbolBuilder func_builder = Symbol::getSymbolBuilder();
+						func_builder.addName(*($2))
+									.setBasicType(BasicType::CALLABLE)
+							   		.setRetType($5.type->type)
+									.setDefAt(@$.first_line);
+
+						int dimension = 0;
+						for (const auto &[type, names] : *($3.paraTypeAndNames))
+						{
+							func_builder.addArg(type);
+							dimension += names.size();
+						}
+						func_builder.setDimension(dimension);
+						Symbol func_symbol = func_builder.Build();
+						debugInfo("插入符号 " + func_symbol.toString());
+						if (!sym_table.InsertSymbol(func_symbol).first)
+						{
+							// TODO 错误处理, 插入失败
+						}
+
+						// 向符号表中添加参数
+						if (!sym_table.EnterScope(func_symbol.name))
+						{
+							// TODO 错误处理, 进入子作用域失败
+						}
+						debugInfo("进入作用域 " + func_symbol.name);
+
+						for (const auto &[type, names] : *($3.paraTypeAndNames))
+						{
+							// 检查名字是否冲突
+							SymbolBuilder params_builder = Symbol::getSymbolBuilder();
+							params_builder.setType(type).setDefAt(@$.first_line);
+							for (const auto &name : names)
+							{
+								if (sym_table.isInScope(name) || name == func_symbol.name)
+								{
+									yyerror("重复的标识符 " + name);
+								}
+								else
+								{
+									auto temp_builder = params_builder;
+									temp_builder.addName(name);
+									sym_table.InsertSymbol(temp_builder.Build());
+									debugInfo("插入参数符号 " + temp_builder.Build().toString());
+								}
+							}
+						}
+					}
+
+					string temp_code = *($5.targetCode) + " " + *($2) + *($3.targetCode);
+					$$ = new string(temp_code);
+					debugInfoBreak();
+				}
+				| TOK_FUNCTION TOK_ID arguments error ';'
+				{
+					debugInfo("进入产生式 subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'");
+					debugInfo("TOK_ID = " + *($2) + ", arguments = " + *($3.targetCode) + ", ret_type = void");
+					// 检查函数名是否重复
+					syntax_err_suply("函数声明缺少返回类型");
+					yyerrok;
+					if (sym_table.getSymbol(*($2)))
+					{
+						yyerror("重复的标识符 " + *($2));
+					}
+					else
+					{
+						SymbolBuilder func_builder = Symbol::getSymbolBuilder();
+						func_builder.addName(*($2))
+									.setBasicType(BasicType::CALLABLE)
+									.setDefAt(@$.first_line);
+
+						int dimension = 0;
+						for (const auto &[type, names] : *($3.paraTypeAndNames))
+						{
+							func_builder.addArg(type);
+							dimension += names.size();
+						}
+						func_builder.setDimension(dimension);
+						Symbol func_symbol = func_builder.Build();
+						debugInfo("插入符号 " + func_symbol.toString());
+						if (!sym_table.InsertSymbol(func_symbol).first)
+						{
+							// TODO 错误处理, 插入失败
+						}
+
+						// 向符号表中添加参数
+						if (!sym_table.EnterScope(func_symbol.name))
+						{
+							// TODO 错误处理, 进入子作用域失败
+						}
+						debugInfo("进入作用域 " + func_symbol.name);
+
+						for (const auto &[type, names] : *($3.paraTypeAndNames))
+						{
+							// 检查名字是否冲突
+							SymbolBuilder params_builder = Symbol::getSymbolBuilder();
+							params_builder.setType(type).setDefAt(@$.first_line);
+							for (const auto &name : names)
+							{
+								if (sym_table.isInScope(name) || name == func_symbol.name)
+								{
+									yyerror("重复的标识符 " + name);
+								}
+								else
+								{
+									auto temp_builder = params_builder;
+									temp_builder.addName(name);
+									sym_table.InsertSymbol(temp_builder.Build());
+									debugInfo("插入参数符号 " + temp_builder.Build().toString());
+								}
+							}
+						}
+					}
+
+					string temp_code = "void " + *($2) + *($3.targetCode);
+					$$ = new string(temp_code);
+					debugInfoBreak();
+				}
+				| TOK_FUNCTION error arguments standard_type ';'
+				{
+					debugInfo("进入产生式 subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'");
+					debugInfo(string("TOK_ID = ?") + ", arguments = " + *($3.targetCode) + ", ret_type = void");
+					// 检查函数名是否重复
+					syntax_err_suply("函数声明缺少标识符");
+					yyerrok;
+					$$ = new string("");
 					debugInfoBreak();
 				}
 				| TOK_FUNCTION TOK_ID arguments error
@@ -780,12 +1272,83 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 					$$ = new string(temp_code);
 					debugInfoBreak();
 				}
+				| TOK_PROCEDURE TOK_ID arguments error
+				{
+					debugInfo("进入产生式 subprogram_head: TOK_PROCEDURE TOK_ID arguments ';'");
+					debugInfo("TOK_ID = " + *($2) + ", arguments = " + *($3.targetCode));
+					// 检查函数名是否重复
+					syntax_err_suply("过程体声明末尾缺少分号");
+					yyerrok;
+					if (sym_table.getSymbol(*($2)))
+					{
+						yyerror("重复的标识符 " + *($2));
+					}
+					else 
+					{
+						SymbolBuilder func_builder = Symbol::getSymbolBuilder();
+						func_builder.addName(*($2))
+									.setBasicType(BasicType::CALLABLE)
+									.setDefAt(@$.first_line);
+
+						int dimension = 0;
+						for (const auto &[type, names] : *($3.paraTypeAndNames))
+						{
+							func_builder.addArg(type);
+							dimension += names.size();
+						}
+						func_builder.setDimension(dimension);
+						Symbol func_symbol = func_builder.Build();
+						debugInfo("插入符号 " + func_symbol.toString());
+						if (!sym_table.InsertSymbol(func_symbol).first)
+						{
+							// TODO 错误处理, 插入失败
+						}
+
+						// 向符号表中添加参数
+						if (!sym_table.EnterScope(func_symbol.name))
+						{
+							// TODO 错误处理, 进入子作用域失败
+						}
+						debugInfo("进入作用域 " + func_symbol.name);
+
+						for (const auto &[type, names] : *($3.paraTypeAndNames))
+						{
+							// 检查名字是否冲突
+							SymbolBuilder params_builder = Symbol::getSymbolBuilder();
+							params_builder.setType(type).setDefAt(@$.first_line);
+							for (const auto &name : names)
+							{
+								if (sym_table.isInScope(name) || name == func_symbol.name)
+								{
+									yyerror("重复的标识符 " + name);
+								}
+								else
+								{
+									auto temp_builder = params_builder;
+									temp_builder.addName(name);
+									sym_table.InsertSymbol(temp_builder.Build());
+									debugInfo("插入参数符号 " + temp_builder.Build().toString());
+								}
+							}
+						}
+					}
+					
+					string temp_code = "void " + *($2) + *($3.targetCode);
+					$$ = new string(temp_code);
+					debugInfoBreak();
+				}
 				| TOK_PROCEDURE TOK_ID arguments error ';'
 				{
 					yyerror("过程 " + *($2) + " 不能有返回值");
 					yyerrok;
 					string temp_code = string("void ") + *($2) + *($3.targetCode);
 					$$ = new string(temp_code);
+				}
+				| TOK_PROCEDURE error arguments ';'
+				{
+					syntax_err_suply("过程缺少标识符");
+					yyerrok;
+					$$ = new string("");
 				};
 
 
