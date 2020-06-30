@@ -86,7 +86,7 @@ using namespace PascalSToCPP;
 }
 
 %token <targetCode> TOK_PROGRAM TOK_VAR TOK_ARRAY TOK_OF TOK_RECORD TOK_INTEGER TOK_REAL TOK_BOOLEAN TOK_FUNCTION TOK_PROCEDURE TOK_DO
-					TOK_BEGIN TOK_IF TOK_THEN TOK_END TOK_NOT TOK_WHILE TOK_READ TOK_WRITE TOK_ELSE TOK_TRUE TOK_FALSE TOK_INPUT TOK_OUTPUT
+					TOK_FOR TOK_TO TOK_BEGIN TOK_IF TOK_THEN TOK_END TOK_NOT TOK_WHILE TOK_READ TOK_WRITE TOK_ELSE TOK_TRUE TOK_FALSE TOK_INPUT TOK_OUTPUT
 
 %token <targetCode> TOK_RELOP TOK_ADDOP TOK_MULOP TOK_ASSIGNOP
 
@@ -361,8 +361,7 @@ subprogram_declaration: subprogram_head declarations compound_statement
 				{
 					string temp = *($1) + "\n" +
 								  *($2) + "\n" +
-								  *($3) + "\n" +
-								  "}\n";
+								  *($3) + "\n";
 					$$ = new string(temp);
 					if (!sym_table.ExitScope())
 					{
@@ -616,7 +615,7 @@ statement_list: statement_list ';' statement
 				}
 				| statement
 				{
-					$$ = new string(*($1) + ";\n");
+					$$ = new string(*($1) + "\n");
 				};
 
 statement: variable TOK_ASSIGNOP expression
@@ -652,14 +651,13 @@ statement: variable TOK_ASSIGNOP expression
 					if (is_return)
 					{
 						temp_code.append("return ")
-								 .append(*($3.targetCode))
-								 .append(";");
+								 .append(*($3.targetCode) + ";");
 					}
 					else
 					{
 						temp_code.append(*($1.targetCode))
 								 .append(" = ")
-								 .append(*($3.targetCode));
+								 .append(*($3.targetCode) + ";");
 					}
 
 					// $$ = new string(move(temp_code));
@@ -675,10 +673,13 @@ statement: variable TOK_ASSIGNOP expression
 				}
 				| compound_statement
 				{
-					$$ = new string(*($1) + ";");
+					$$ = new string(*($1));
 				}
 				| TOK_IF expression TOK_THEN statement
 				{
+					debugInfo("进入产生式 statement: TOK_IF expression TOK_THEN statement");
+					debugInfo("expression.type=" + $2.type->toString() + ", expression.targetCode=" + *($2.targetCode) +
+							  ", statement.targetCode=" + *($4));
 					Type expr_type = *($2.type);
 					if (expr_type.type != BasicType::BOOLEAN)
 					{
@@ -691,9 +692,13 @@ statement: variable TOK_ASSIGNOP expression
 							 .append("{\n")
 							 .append(*($4))
 							 .append("\n}\n");
+					debugInfoBreak();
 				}
 				| TOK_IF expression TOK_THEN statement TOK_ELSE statement
 				{
+					debugInfo("进入产生式 statement: TOK_IF expression TOK_THEN statement");
+					debugInfo("expression.type=" + $2.type->toString() + ", expression.targetCode=" + *($2.targetCode) +
+							  ", statement1.targetCode=" + *($4) + ", statement2.targetCode=" + *($6));
 					Type expr_type = *($2.type);
 					if (expr_type.type != BasicType::BOOLEAN)
 					{
@@ -709,6 +714,8 @@ statement: variable TOK_ASSIGNOP expression
 							 .append("else {\n")
 							 .append(*($6) + "\n")
 							 .append("}\n");
+					$$ = new string(temp_code);
+					debugInfoBreak();
 				}
 				| TOK_WHILE expression TOK_DO statement
 				{
@@ -731,7 +738,7 @@ statement: variable TOK_ASSIGNOP expression
 					for (const auto &name : *($3.names))
 						temp_code.append(" >> ")
 								 .append(name);
-					$$ = new string(temp_code);
+					$$ = new string(temp_code + ";");
 				}
 				| TOK_WRITE '(' expr_list ')'
 				{
@@ -748,6 +755,11 @@ statement: variable TOK_ASSIGNOP expression
 					for (const auto &name : *($3.names))
 						temp_code.append(" >> ")
 								 .append(name);
+					$$ = new string(temp_code + ";");
+				}
+				| TOK_FOR TOK_ID TOK_ASSIGNOP expression TOK_TO expression TOK_DO statement
+				{
+
 				};
 
 variable: TOK_ID
@@ -1003,7 +1015,14 @@ simple_expr: simple_expr TOK_ADDOP term
 				{
 					debugInfo("进入产生式 simple_expr: term");
 					debugInfo("term.type = " + $1.type->toString() + ", term.targetCode = " + *($1.targetCode));
-          			$$.type = new Type(*($1.type));
+          			
+					if ($1.type->isCallable())
+					{
+						$$.type = new Type();
+						$$.type->type = $1.type->ret_type;
+					}	
+					else
+						$$.type = new Type(*($1.type));
           			$$.targetCode = new string(*($1.targetCode));
 					debugInfoBreak();
 				}
@@ -1185,7 +1204,7 @@ factor: TOK_ID
 								{
           			  	  	  	  	for (int i = 0; i < $3.types->size(); i++) 
 									{
-          			  	  	  	  	  	if ((*($3.types))[i] != symbol->type.args[i]) 
+          			  	  	  	  	  	if ((*($3.types))[i].type != symbol->type.args[i].type) 
 										{
           			  	  	  	  	  	  	yyerror("第 " + to_string(i) + " 个参数类型不匹配, 期望类型: " + symbol->type.args[i].toString() +
 												", 实际传入类型: " + (*($3.types))[i].toString() , @$.first_line);
@@ -1194,7 +1213,7 @@ factor: TOK_ID
           			  	  	  	  	}
           			  	  	  	  	$$.targetCode = new string(*($1) + "(" + *($3.targetCode) + ")");
 									$$.type = new Type();
-									$$.type->type = symbol->type.type;
+									$$.type->type = symbol->type.ret_type;
           			  	  	  	}
           			  	  	}
           			  	}
