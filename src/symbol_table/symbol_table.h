@@ -26,9 +26,10 @@ namespace PascalSToCPP
         VOID,
         FIRST_VAL = INTEGER,
         LAST_VAL = VOID,
+        INVALID,
     };
 
-    static const inline std::string &BasicTypeStr(BasicType basic_type)
+    static const inline std::string BasicTypeStr(BasicType basic_type)
     {
         static const std::map<BasicType, std::string> type_str =
         {
@@ -39,7 +40,10 @@ namespace PascalSToCPP
             {BasicType::CALLABLE, "callable"},
             {BasicType::VOID, "void"},
         };
-        return type_str.at(basic_type);
+        if (type_str.count(basic_type))
+            return type_str.at(basic_type);
+        else
+            return "INVALID";
     }
     
     /**

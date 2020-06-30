@@ -1,4 +1,3 @@
-%option yylineno caseless
 %{
 #include <string>
 #include <vector>
@@ -11,6 +10,7 @@
 using namespace std;
 %}
 
+%option yylineno caseless
 
 white_space       [ \t\n\r]+
 digit             [0-9]
