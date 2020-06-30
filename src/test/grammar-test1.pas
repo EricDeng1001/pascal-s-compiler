@@ -1,8 +1,8 @@
 program test(input, output);
 var x,y: integer;
-var c: char;
-var d: real;
-z,z1,z2,z3,z4:array[1..9] of integer;
+c: char;
+d: real;
+z, z1, z2, z3, z4: array[1..9] of integer;
 function gcd(a,b: integer):integer;
 var f:integer;
 begin
