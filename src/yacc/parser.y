@@ -189,11 +189,15 @@ program_body: declarations subprogram_declarations compound_statement
 
 declarations: TOK_VAR declaration ';'
 				{
+					debugInfo("进入产生式 declarations: TOK_VAR declaration ';'", @$.first_line);
 					$$ = new string(*($2));
+					debugInfoBreak();
 				}
 				|
 				{
+					debugInfo("进入产生式 declarations: ", @$.first_line);
 					$$ = new string("");
+					debugInfoBreak();
 				};
 
 declaration: declaration ';' identifier_list ':' type
@@ -343,41 +347,54 @@ type: standard_type
 
 standard_type: TOK_INTEGER
 				{
+					debugInfo("进入产生式 standard_type: TOK_INTEGER", @$.first_line);
 					$$.type = new Type();
 					$$.type->type = BasicType::INTEGER;
 					$$.targetCode = new string("int");
+					debugInfoBreak();
 				}
 				| TOK_REAL
 				{
+					debugInfo("进入产生式 standard_type: TOK_REAL", @$.first_line);
 					$$.type = new Type();
 					$$.type->type = BasicType::REAL;
 					$$.targetCode = new string("double");
+					debugInfoBreak();
 				}
 				| TOK_BOOLEAN
 				{
+					debugInfo("进入产生式 standard_type: TOK_BOOLEAN", @$.first_line);
 					$$.type = new Type();
 					$$.type->type = BasicType::BOOLEAN;
 					$$.targetCode = new string("bool");
+					debugInfoBreak();
 				}
 				| TOK_CHAR
 				{
+					debugInfo("进入产生式 standard_type: TOK_CHAR", @$.first_line);
 					$$.type = new Type();
 					$$.type->type = BasicType::CHAR;
 					$$.targetCode = new string("char");
+					debugInfoBreak();
 				};
 
 subprogram_declarations: subprogram_declarations subprogram_declaration ';'
 				{
+					debugInfo("进入产生式 subprogram_declarations: subprogram_declarations subprogram_declaration ';'", @$.first_line);
 					string temp = *($1) + "\n" + *($2);
 					$$ = new string(temp);
+					debugInfoBreak();
 				}
 				|
 				{
+					debugInfo("进入产生式 subprogram_declarations: ", @$.first_line);
 					$$ = new string("");
+					debugInfoBreak();
 				};
 
 subprogram_declaration: subprogram_head declarations compound_statement
 				{
+					debugInfo("进入产生式 subprogram_declaration: subprogram_head declarations compound_statement", @$.first_line);
 					string temp = *($1) + "{\n" +
 								  *($2) + "\n" +
 								  *($3) + "\n}\n";
@@ -435,7 +452,7 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 						params_builder.setType(type).setDefAt(@$.first_line);
 						for (const auto &name : names)
 						{
-							if (sym_table.getSymbol(name) || name == func_symbol.name)
+							if (sym_table.isInScope(name) || name == func_symbol.name)
 							{
 								yyerror("重复的标识符 " + name, @$.first_line);
 								yyerrok;
@@ -502,7 +519,7 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 						params_builder.setType(type).setDefAt(@$.first_line);
 						for (const auto &name : names)
 						{
-							if (sym_table.getSymbol(name) || name == func_symbol.name)
+							if (sym_table.isInScope(name) || name == func_symbol.name)
 							{
 								yyerror("重复的标识符 " + name, @$.first_line);
 								yyerrok;
@@ -529,30 +546,38 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 
 arguments: '(' parameter_lists ')'
 				{
+					debugInfo("进入产生式 arguments: '(' parameter_lists ')'", @$.first_line);
 					$$.paraTypeAndNames =
 						new vector<pair<Type, vector<string>>>(*($2.paraTypeAndNames));
 					$$.targetCode = new string("(");
 					$$.targetCode->append(*($2.targetCode))
 								 .append(")");
+					debugInfoBreak();
 				}
 				|
 				{
+					debugInfo("进入产生式 arguments: ", @$.first_line);
 					$$.paraTypeAndNames = new vector<pair<Type, vector<string>>>();
 					$$.targetCode = new string("()");
+					debugInfoBreak();
 				};
 
 parameter_lists: parameter_lists ';' parameter_list
 				{
+					debugInfo("进入产生式 parameter_lists: parameter_lists ';' parameter_list", @$.first_line);
 					$$.targetCode = new string(*($1.targetCode));
 					$$.targetCode->push_back(','); // 分隔两个参数列表
 					$$.targetCode->append(*($3.targetCode));
 					$$.paraTypeAndNames = new vector<pair<Type, vector<string>>>(*($1.paraTypeAndNames));
 					$$.paraTypeAndNames->push_back($3.paraTypeAndNames->front());
+					debugInfoBreak();
 				}
 				| parameter_list
 				{
+					debugInfo("进入产生式 parameter_lists: parameter_list", @$.first_line);
 					$$.targetCode = new string(*($1.targetCode));
 					$$.paraTypeAndNames = new vector<pair<Type, vector<string>>>(*($1.paraTypeAndNames));
+					debugInfoBreak();
 				};
 
 parameter_list: TOK_VAR identifier_list ':' type
@@ -739,6 +764,8 @@ statement: variable TOK_ASSIGNOP expression
 				}
 				| TOK_WHILE expression TOK_DO statement
 				{
+					debugInfo("进入产生式 statement: TOK_WHILE expression TOK_DO statement", @$.first_line);
+					debugInfo("expression.type=" + $2.type->toString() + ", statement=" + *($4), @$.first_line);
 					Type expr_type = *($2.type);
 					if (expr_type.type != BasicType::BOOLEAN)
 					{
@@ -752,6 +779,7 @@ statement: variable TOK_ASSIGNOP expression
 							 .append(*($4) + "\n")
 							 .append("}\n");
 					$$ = new string(temp_code);
+					debugInfoBreak();
 				}
 				| TOK_READ '(' variable_list ')'
 				{
@@ -997,6 +1025,11 @@ expr_list: expr_list ',' expression
 
 expression: simple_expr TOK_RELOP simple_expr
 				{
+					debugInfo("进入产生式 expression: simple_expr TOK_RELOP simple_expr", @$.first_line);
+					debugInfo("TOK_RELOP=" + *($2) + ", simple_expr1.type=" + $1.type->toString() + 
+							  ", simple_expr1.targetCode=" + *($1.targetCode) + 
+							  ", simple_expr2.type=" + $3.type->toString() + 
+							  ", simple_expr2.targetCode=" + *($3.targetCode), @$.first_line);
           			string relop;
           			if (!($1.type->isCallable()) && !($1.type->isArray())
           			&& !($3.type->isCallable()) && !($3.type->isArray())) 
@@ -1022,11 +1055,16 @@ expression: simple_expr TOK_RELOP simple_expr
           			  	yyerror("关系表达式，类型不正确", @$.first_line);
           			  	yyerrok;
           			}
+					debugInfoBreak();
 				}
 				| simple_expr
 				{
+					debugInfo("进入产生式 expression: simple_expr", @$.first_line);
+					debugInfo("simple_expr.type=" + $1.type->toString() + 
+							  ", simple_expr.targetCode=" + *($1.targetCode), @$.first_line);
           			$$.type = new Type(*($1.type));
           			$$.targetCode = new string(*($1.targetCode));
+					debugInfoBreak();
 				};
 
 simple_expr: simple_expr TOK_ADDOP term
@@ -1333,15 +1371,23 @@ factor: TOK_ID
 						$$.type->type = BasicType::REAL;
 					else
 						$$.type->type = BasicType::INTEGER;
+					debugInfoBreak();
 				}
 				| '(' expression ')'
 				{
+					debugInfo("进入产生式 factor: '(' expression ')'", @$.first_line);
+					debugInfo("expression.type=" + $2.type->toString() + 
+							  ", expression.targetCode=" + *($2.targetCode), @$.first_line);
 					$$.type = new Type(*($2.type));
 					$$.targetCode = new string();
 					*($$.targetCode) = "(" + *($2.targetCode) + ")";
+					debugInfoBreak();
 				}
 				| TOK_NOT factor
 				{
+					debugInfo("进入产生式 factor: TOK_NOT factor", @$.first_line);
+					debugInfo("factor.type=" + $2.type->toString() + 
+							  ", factor.targetCode=" + *($2.targetCode), @$.first_line);
 					if ($2.type->type != BasicType::BOOLEAN)
 					{
 						yyerror("NOT 后面必须为布尔表达式", @$.first_line);
@@ -1351,22 +1397,27 @@ factor: TOK_ID
 					$$.targetCode = new string("!");
 					$$.targetCode->append(*($2.targetCode));
 					$$.type->type = BasicType::BOOLEAN;
+					debugInfoBreak();
 				}
 				| TOK_TRUE
 				{
+					debugInfo("进入产生式 factor: TOK_TRUE", @$.first_line);
 					$$.type = new Type();
 					$$.targetCode = new string("true");
 					$$.type->type = BasicType::BOOLEAN;
+					debugInfoBreak();
 				}
 				| TOK_FALSE
 				{
+					debugInfo("进入产生式 factor: TOK_FALSE", @$.first_line);
 				 	$$.type = new Type();
 					$$.targetCode = new string("false");
 					$$.type->type = BasicType::BOOLEAN;
+					debugInfoBreak();
 				}
 				| TOK_CHAR_LIT
 				{
-					debugInfo("进入作用域 factor: TOK_CHAR_LIT", @$.first_line);
+					debugInfo("进入产生式 factor: TOK_CHAR_LIT", @$.first_line);
 					debugInfo("TOK_CHAR_LIT=" + *($1), @$.first_line);
 					$$.type = new Type();
 					$$.type->type = BasicType::CHAR;
@@ -1394,15 +1445,19 @@ factor: TOK_ID
 						temp_string.push_back('"');
 					}
 					$$.targetCode = new string(temp_string);
+					debugInfoBreak();
 				};
 
-sign: '+'
+sign: TOK_ADDOP
 	  {
-	  	$$ = new string("+");
-	  }
-	  | '-'
-	  {
-	  	$$ = new string("-");
+		debugInfo("进入产生式 sign: TOK_ADDOP", @$.first_line);
+		if (*($1) == "or")
+		{
+			yyerror("符号必须为加号或者减号", @$.first_line);
+			yyerrok;
+		}
+	  	$$ = new string(*($1));
+		debugInfoBreak();
 	  };
 %%
 
