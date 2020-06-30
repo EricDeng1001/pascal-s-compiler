@@ -21,9 +21,9 @@ num               {digits}{fraction}{exponent}
 
 letter            [A-Za-z]
 id                {letter}({letter}|{digit})*
-
-block_annotation  \{\*[.\n]*\*\}
-line_annotation   \{[.]*\}
+charliteral       '([A-Za-z ]|(\\n))'
+block_annotation  \{\*.*\*\}
+line_annotation   \{.*\}
 annotation        {block_annotation}|{line_annotation}
 
 %%
@@ -37,6 +37,7 @@ record                            {yylval.targetCode = new string(yytext); retur
 integer                           {yylval.targetCode = new string(yytext); return TOK_INTEGER;}
 real                              {yylval.targetCode = new string(yytext); return TOK_REAL;}
 boolean                           {yylval.targetCode = new string(yytext); return TOK_BOOLEAN;}
+char 							  {yylval.targetCode = new string(yytext); return TOK_CHAR;}
 function                          {yylval.targetCode = new string(yytext); return TOK_FUNCTION;}
 procedure                         {yylval.targetCode = new string(yytext); return TOK_PROCEDURE;}
 begin                             {yylval.targetCode = new string(yytext); return TOK_BEGIN;}
@@ -65,11 +66,11 @@ false                             {yylval.targetCode = new string(yytext); retur
 
 {digits}                          {yylval.targetDigitCode.targetCode = new string(yytext);yylval.targetDigitCode.isReal = 0; return TOK_NUM;}
 {num}                             {yylval.targetDigitCode.targetCode = new string(yytext);yylval.targetDigitCode.isReal = 1; return TOK_NUM;}
+{charliteral}					  {yylval.targetCode = new string(yytext); return TOK_CHAR_LIT;}
 
 {annotation}                      {}
 {white_space}                     {}
-
-.                                 {cout<<yylineno<<"行：词法错误--非法字符"<<endl;}
+.                                 {cerr << "!ERROR!(" << yylineno << ")：词法错误--非法字符: " << yytext << endl;}
 
 
 %%
