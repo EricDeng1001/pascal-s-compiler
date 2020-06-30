@@ -16,6 +16,18 @@ using namespace PascalSToCPP;
 SymbolTable sym_table;
 int yylex(void);
 void yyerror(const string &err_msg);
+void yyerror(const string &err_msg, int line_no);
+string toLower(const string &str);
+#define YYERROR_VERBOSE
+
+#ifndef NDEBUG
+void debugInfo(const string &info) 
+{
+	cout << "!DEBUG!: " << info << endl;
+}
+#else
+void debugInfo(const string &info) {}
+#endif
 %}
 
 %code requires {
@@ -96,26 +108,44 @@ using namespace PascalSToCPP;
 
 program: program_head program_body '.'
 				{
+					debugInfo("进入产生式 program: program_head program_body '.'"); 
 					string tmp_target = *($1) + *($2);
 					$$ = new string(tmp_target);
 					cout << *($$);
 				}
         | program_head program_body error
 				{
+					debugInfo("进入产生式 program: program_head program_body error"); 
 					string tmp_target = *($1) + *($2);
 					$$ = new string(tmp_target);
 					cout << *($$);
-					yyerror("program -> program_head program_body . : missing '.'at the end of the program.");
+					yyerror("program -> program_head program_body . : missing '.'at the end of the program.", @$.first_line);
 					yyerrok;
 				};
 
-program_head: TOK_PROGRAM TOK_ID '(' TOK_INPUT ',' TOK_OUTPUT ')' ';'
+program_head: TOK_PROGRAM TOK_ID '(' identifier_list ')' ';'
 				{
+					debugInfo("进入产生式 program_head: TOK_PROGRAM TOK_ID '(' identifier_list ')' ';'");
+					debugInfo("TOK_PROGRAM = " + *($1) + ", TOK_ID = " + *($2));
+					const auto &names = *($4.names);
+					if (names.size() != 2 || (names.size() == 2 && (toLower(names[0]) != "input" || toLower(names[1]) != "output")))
+					{
+						yyerror("program 后的参数列表必须为input, output", @$.first_line);
+						yyerrok;
+					}
 					$$ = new string("#include <iostream>\n#include <cmath>\nusing namespace std;\n"); //填写C++程序首部
-				};
+				}
+			  | TOK_PROGRAM TOK_ID ';'
+			  	{
+					debugInfo("进入产生式 TOK_PROGRAM TOK_ID ';'");
+					debugInfo("TOK_PROGRAM = " + *($1) + ", TOK_ID = " + *($2));
+					$$ = new string("#include <iostream>\n#include <cmath>\nusing namespace std;\n"); //填写C++程序首部
+			  	};
 
 identifier_list: identifier_list ',' TOK_ID
 				{
+					debugInfo("进入产生式 identifier_list: identifier_list ',' TOK_ID");
+					debugInfo("TOK_ID = " + *($3));
 					// 记录已经录入的参数
 					$$.names = new vector<string>(*($1.names));
 					// 记录新的id
@@ -123,12 +153,15 @@ identifier_list: identifier_list ',' TOK_ID
 				}
 				| TOK_ID
 				{
+					debugInfo("进入产生式 identifier_list: TOK_ID");
+					debugInfo("TOK_ID = " + *($1));
 					$$.names = new vector<string>();
 					($$.names)->push_back(*($1));
 				};
 
 program_body: declarations subprogram_declarations compound_statement
 				{
+					debugInfo("进入产生式 program_body: declarations subprogram_declarations compound_statement");
 					string tmp_target = *($1) + "\n" +
 										*($2) + "\n" +
 										"int main()\n{\n" +
@@ -139,7 +172,7 @@ program_body: declarations subprogram_declarations compound_statement
 
 declarations: TOK_VAR declaration ';'
 				{
-					$$ = $2;
+					$$ = new string(*($2));
 				}
 				|
 				{
@@ -148,6 +181,8 @@ declarations: TOK_VAR declaration ';'
 
 declaration: declaration ';' identifier_list ':' type
 				{
+					debugInfo("进入产生式 declaration: declaration ';' identifier_list ':' type");
+					debugInfo("type = " + *($5.targetCode));
 					//使用dimension来判断是否为数组
 					if(($5.type)->dimension == 0) 
 					{
@@ -160,7 +195,7 @@ declaration: declaration ';' identifier_list ':' type
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) 
 							{
-								yyerror("declaration -> declaration ; identifier_list : type : redefined varible Identifier in identifier_list!");
+								yyerror("declaration -> declaration ; identifier_list : type : redefined varible Identifier in identifier_list!", @$.first_line);
 								yyerrok;
 							}
 							else 
@@ -183,7 +218,7 @@ declaration: declaration ';' identifier_list ':' type
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) 
 							{
-								yyerror("declaration -> declaration ; identifier_list : type : redefined array Identifier in identifier_list!");
+								yyerror("declaration -> declaration ; identifier_list : type : redefined array Identifier in identifier_list!", @$.first_line);
 								yyerrok;
 							}
 							else 
@@ -195,11 +230,13 @@ declaration: declaration ';' identifier_list ':' type
 									tmp_target += " " + (*($3.names))[i] + "[" + target + "];\n";
 							}
 						}
-						$$ = new string(*$1 + tmp_target);
+						$$ = new string(*($1) + tmp_target);
 					}
 				}
 				| identifier_list ':' type
 				{
+					debugInfo("进入产生式 declaration: identifier_list ':' type");
+					debugInfo("type = " + *($3.targetCode));
 					//使用dimension来判断是否为数组
 					if(($3.type)->dimension == 0) 
 					{
@@ -211,7 +248,7 @@ declaration: declaration ';' identifier_list ':' type
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) 
 							{
-								yyerror("declaration -> declaration ; identifier_list : type : redefined varible Identifier in identifier_list!");
+								yyerror("declaration -> declaration ; identifier_list : type : redefined varible Identifier in identifier_list!", @$.first_line);
 								yyerrok;
 							}
 							else 
@@ -234,7 +271,7 @@ declaration: declaration ';' identifier_list ':' type
 							pair<bool, int> res = sym_table.InsertSymbol(sym);
 							if(res.first == false) 
 							{
-								yyerror("declaration -> declaration ; identifier_list : type : redefined array Identifier in identifier_list!");
+								yyerror("declaration -> declaration ; identifier_list : type : redefined array Identifier in identifier_list!", @$.first_line);
 								yyerrok;
 							}
 							else 
@@ -252,23 +289,28 @@ declaration: declaration ';' identifier_list ':' type
 
 type: standard_type
 				{
-					$$.type = $1.type;
-					$$.targetCode = $1.targetCode;
+					debugInfo("进入产生式 type: standard_type");
+					debugInfo("standard_type = " + *($1.targetCode));
+					$$.type = new Type(*($1.type));
+					$$.targetCode = new string(*($1.targetCode));
 				}
 				| TOK_ARRAY '[' TOK_NUM '.' '.' TOK_NUM ']' TOK_OF standard_type
 				{
+					debugInfo("进入产生式 type: TOK_ARRAY '[' TOK_NUM '.' '.' TOK_NUM ']' TOK_OF standard_type");
+					debugInfo("TOK_NUM1 = " + *($3.targetCode) + ", TOK_NUM2 = " + *($6.targetCode) + 
+						      ", standard_type = " + *($9.targetCode));
 					if($3.isReal || $6.isReal) {
-						yyerror("type -> ARRAY [ NUM . . NUM ] OF standard_type : 数组参数NUM类型错误!");		/////////////////////////////////////////////////////// 现在
+						yyerror("type -> ARRAY [ NUM . . NUM ] OF standard_type : 数组参数NUM类型错误!", @$.first_line);
 						yyerrok;
 					}
 					$$.type = new Type(*($9.type));
 					$$.arrayTop = (int)(atoi($6.targetCode->c_str()));
 					$$.arrayBottom = (int)(atoi($3.targetCode->c_str()));
 					if($$.arrayTop - $$.arrayBottom < 0) {
-						yyerror("type -> ARRAY [ NUM . . NUM ] OF standard_type : 数组下界不可小于上界!");
+						yyerror("type -> ARRAY [ NUM . . NUM ] OF standard_type : 数组下界不可小于上界!", @$.first_line);
 						yyerrok;
 					}
-					$$.targetCode = $9.targetCode;
+					$$.targetCode = new string(*($9.targetCode));
 				};
 
 standard_type: TOK_INTEGER
@@ -311,19 +353,23 @@ subprogram_declaration: subprogram_head declarations compound_statement
 					{
 						// TODO 错误处理, 退出作用域失败
 					}
+					debugInfo("退出作用域");
 				};
 
 subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 				{
+					debugInfo("进入产生式 subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'");
+					debugInfo("TOK_ID = " + *($2) + ", arguments = " + *($3.targetCode) + ", ret_type = " + *($5.targetCode));
 					// 检查函数名是否重复
 					if (sym_table.isInScope(*($2)))
 					{
-						yyerror("重复的标识符 " + *($2));
+						yyerror("重复的标识符 " + *($2), @$.first_line);
 						yyerrok;
 					}
 
 					SymbolBuilder func_builder = Symbol::getSymbolBuilder();
 					func_builder.addName(*($2))
+								.setBasicType(BasicType::CALLABLE)
 						   		.setRetType($5.type->type)
 								.setDefAt(@$.first_line);
 
@@ -334,7 +380,8 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 						dimension += names.size();
 					}
 					func_builder.setDimension(dimension);
-					Symbol func_symbol;
+					Symbol func_symbol = func_builder.Build();
+					debugInfo("插入符号 " + func_symbol.toString());
 					if (!sym_table.InsertSymbol(func_symbol).first)
 					{
 						// TODO 错误处理, 插入失败
@@ -345,6 +392,7 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 					{
 						// TODO 错误处理, 进入子作用域失败
 					}
+					debugInfo("进入作用域 " + func_symbol.name);
 
 					for (const auto &[type, names] : *($3.paraTypeAndNames))
 					{
@@ -355,12 +403,13 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 						{
 							if (sym_table.isInScope(name) || name == func_symbol.name)
 							{
-								yyerror("重复的标识符 " + name);
+								yyerror("重复的标识符 " + name, @$.first_line);
 								yyerrok;
 							}
 							auto temp_builder = params_builder;
 							temp_builder.addName(name);
 							sym_table.InsertSymbol(temp_builder.Build());
+							debugInfo("插入参数符号 " + temp_builder.Build().toString());
 						}
 					}
 
@@ -369,22 +418,25 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 				}
 				| TOK_FUNCTION TOK_ID arguments error
 				{
-					yyerror("函数 " + *($2) + " 没有返回值");
+					yyerror("函数 " + *($2) + " 没有返回值", @$.first_line);
 					yyerrok;
 					string temp_code = string("void ") + *($2) + *($3.targetCode);
 					$$ = new string(temp_code);
 				}
 				| TOK_PROCEDURE TOK_ID arguments ';'
 				{
+					debugInfo("进入产生式 subprogram_head: TOK_PROCEDURE TOK_ID arguments ';'");
+					debugInfo("TOK_ID = " + *($2) + ", arguments = " + *($3.targetCode));
 					// 检查函数名是否重复
 					if (sym_table.isInScope(*($2)))
 					{
-						yyerror("重复的标识符 " + *($2));
+						yyerror("重复的标识符 " + *($2), @$.first_line);
 						yyerrok;
 					}
 
 					SymbolBuilder func_builder = Symbol::getSymbolBuilder();
 					func_builder.addName(*($2))
+								.setBasicType(BasicType::CALLABLE)
 								.setDefAt(@$.first_line);
 
 					int dimension = 0;
@@ -394,7 +446,8 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 						dimension += names.size();
 					}
 					func_builder.setDimension(dimension);
-					Symbol func_symbol;
+					Symbol func_symbol = func_builder.Build();
+					debugInfo("插入符号 " + func_symbol.toString());
 					if (!sym_table.InsertSymbol(func_symbol).first)
 					{
 						// TODO 错误处理, 插入失败
@@ -405,6 +458,7 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 					{
 						// TODO 错误处理, 进入子作用域失败
 					}
+					debugInfo("进入作用域 " + func_symbol.name);
 
 					for (const auto &[type, names] : *($3.paraTypeAndNames))
 					{
@@ -415,12 +469,13 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 						{
 							if (sym_table.isInScope(name) || name == func_symbol.name)
 							{
-								yyerror("重复的标识符 " + name);
+								yyerror("重复的标识符 " + name, @$.first_line);
 								yyerrok;
 							}
 							auto temp_builder = params_builder;
 							temp_builder.addName(name);
 							sym_table.InsertSymbol(temp_builder.Build());
+							debugInfo("插入参数符号 " + temp_builder.Build().toString());
 						}
 					}
 
@@ -429,7 +484,7 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 				}
 				| TOK_PROCEDURE TOK_ID arguments error ';'
 				{
-					yyerror("过程 " + *($2) + " 不能有返回值");
+					yyerror("过程 " + *($2) + " 不能有返回值", @$.first_line);
 					yyerrok;
 					string temp_code = string("void ") + *($2) + *($3.targetCode);
 					$$ = new string(temp_code);
@@ -548,26 +603,30 @@ statement_list: statement_list ';' statement
 
 statement: variable TOK_ASSIGNOP expression
 				{
+					debugInfo("进入产生式 statement: variable TOK_ASSIGNOP expression");
+					debugInfo("variable.type = " + $1.type->toString() + ", variable.targetCode = " + *($1.targetCode) +
+							  ", expression.type = " + $3.type->toString() + ", expression.targetCode = " + *($3.targetCode));
 					BasicType lhs_type, rhs_type;
 					bool is_return{false};
 					if ($1.type->type == BasicType::CALLABLE)
 					{
-						lhs_type = $1.type->type;
+						lhs_type = $1.type->ret_type;
 						is_return = true;
 					}
 					else
 						lhs_type = $1.type->type;
 					rhs_type = $3.type->type;
+					debugInfo("lhs_type = " + BasicTypeStr(lhs_type) + ", rhs_type = " + BasicTypeStr(rhs_type));
 
 					if (lhs_type != rhs_type)
 					{
-						yyerror("赋值语句两边的类型不相等");
+						yyerror("赋值语句两边的类型不相等", @$.first_line);
 						yyerrok;
 					}
 
 					if ($1.type->isArray())
 					{
-						yyerror("赋值语句不直接应用于数组");
+						yyerror("赋值语句不直接应用于数组", @$.first_line);
 						yyerrok;
 					}
 
@@ -590,6 +649,8 @@ statement: variable TOK_ASSIGNOP expression
 				}
 				| procedure_call_statement
 				{
+				    debugInfo("进入产生式 statement: procedure_call_statement");
+					debugInfo("pcs = " + *($1));
 					$$ = new string(*($1) + ";");
 				}
 				| compound_statement
@@ -601,7 +662,7 @@ statement: variable TOK_ASSIGNOP expression
 					Type expr_type = *($2.type);
 					if (expr_type.type != BasicType::BOOLEAN)
 					{
-						yyerror("if 后的表达式必须为布尔表达式");
+						yyerror("if 后的表达式必须为布尔表达式", @$.first_line);
 						yyerrok;
 					}
 
@@ -616,7 +677,7 @@ statement: variable TOK_ASSIGNOP expression
 					Type expr_type = *($2.type);
 					if (expr_type.type != BasicType::BOOLEAN)
 					{
-						yyerror("if 后的表达式必须为布尔表达式");
+						yyerror("if 后的表达式必须为布尔表达式", @$.first_line);
 						yyerrok;
 					}
 
@@ -634,7 +695,7 @@ statement: variable TOK_ASSIGNOP expression
 					Type expr_type = *($2.type);
 					if (expr_type.type != BasicType::BOOLEAN)
 					{
-						yyerror("while 后的表达式必须为布尔表达式");
+						yyerror("while 后的表达式必须为布尔表达式", @$.first_line);
 						yyerrok;
 					}
 
@@ -659,7 +720,7 @@ statement: variable TOK_ASSIGNOP expression
 					{
 						if ($3.types->at(i).type == BasicType::VOID)
 						{
-							yyerror("write 中的表达式的值不能为空");
+							yyerror("write 中的表达式的值不能为空", @$.first_line);
 							yyerrok;
 						}
 					}
@@ -672,99 +733,145 @@ statement: variable TOK_ASSIGNOP expression
 variable: TOK_ID
 				{
           			Symbol* symbol = sym_table.getSymbol(*($1));
-          			if (symbol == nullptr) {
-          			  yyerror("id not defined!");
-          			  yyerrok;
-          			} else if (symbol->type.isCallable()) {
-          			  if (*($1) == sym_table.getParentSymbol()->name) {
-          			    if (symbol->type.ret_type == BasicType::VOID) {
-          			      yyerror("could not return");
-          			      yyerrok;
-          			    } else {
-          			      $$.type = new Type(symbol->type);
-          			    }
-          			  } else {
-          			      yyerror("return id wrong");
-          			      yyerrok;
-          			  }
-          			} else if (symbol->type.isArray()) {
-          			  yyerror("can not assign array");
-          			  yyerrok;
+          			if (!symbol) 
+					{
+          				yyerror("标识符 " + *($1) + " 未定义", @$.first_line);
+          			  	yyerrok;
+          			} 
+					else if (symbol->type.isCallable()) 
+					{
+          			  	if (*($1) == sym_table.getParentSymbol()->name) 
+						{
+          			    	if (symbol->type.ret_type == BasicType::VOID) 
+							{
+          			      		yyerror("函数 " + *($1) + " 没有返回值", @$.first_line);
+          			      		yyerrok;
+          			    	} 
+							else 
+							{
+          			      		$$.type = new Type(symbol->type);
+          			    	}
+          			  	} 
+						else
+						{
+          			    	yyerror("函数 " + *($1) + "不应在赋值符号的左侧", @$.first_line);
+          			      	yyerrok;
+          			  	}
+          			} 
+					else if (symbol->type.isArray()) 
+					{
+          			  	yyerror("不允许对数组进行赋值", @$.first_line);
+          			  	yyerrok;
           			}
-          			else {
-          			  $$.type = new Type(symbol->type);
-          			  $$.targetCode = new string(*($1));
+          			else 
+					{
+          			  	$$.type = new Type(symbol->type);
+          			  	$$.targetCode = new string(*($1));
           			}
 				}
 				| TOK_ID '[' expression ']'
 				{
           			Symbol* symbol = sym_table.getSymbol(*($1));
-          			if (symbol == nullptr) {
-          			  yyerror("id not defined");
-          			  yyerrok;
-          			} else if (!symbol->type.isArray()) {
-          			  yyerror("id must be an array");
-          			  yyerrok;
-          			} else {
-          			  if ($3.type->type != BasicType::INTEGER) {
-          			    yyerror("引用必须是整数");
-          			    yyerrok;
-          			  } else {
-          			    $$.type = new Type(symbol->type);
-          			    $$.targetCode = new string(*($1) + "[" +  *($3.targetCode) + "]");
-          			  }
+          			if (!symbol) 
+					{
+          			  	yyerror("标识符 " + *($1) + " 未定义", @$.first_line);
+          			  	yyerrok;
+          			} 
+					else if (!symbol->type.isArray()) 
+					{
+          			  	yyerror("标识符 " + *($1) + "不为数组类型", @$.first_line);
+          			  	yyerrok;
+          			} 
+					else 
+					{
+          			  	if ($3.type->type != BasicType::INTEGER) 
+						{
+          			    	yyerror("数组下标引用必须是整数", @$.first_line);
+          			    	yyerrok;
+          			  	}
+						else
+						{
+          			    	$$.type = new Type(symbol->type);
+          			    	$$.targetCode = new string(*($1) + "[" +  *($3.targetCode) + "]");
+          			  	}
           			}
 				};
 
 procedure_call_statement: TOK_ID
 				{
+					debugInfo("进入产生式 procedure_call_statement: TOK_ID");
+					debugInfo("TOK_ID = " + *($1));
           			Symbol* symbol = sym_table.getSymbol(*($1));
-          			if (symbol == nullptr) {
-          			  yyerror("id not defined");
-          			  yyerrok;
-          			} else {
-          			  if (symbol->type.isCallable()) {
-          			    $$ = new string(*($1) + "();\n");
-          			  } else {
-          			    yyerror("id is not callable");
-          			    yyerrok;
-          			  }
+          			if (!symbol) 
+					{
+          			  	yyerror("标识符 " + *($1) + " 未定义", @$.first_line);
+          			  	yyerrok;
+          			} 
+					else 
+					{
+          			  	if (symbol->type.isCallable()) 
+						{
+          			    	$$ = new string(*($1) + "();\n");
+          			  	} 
+						else
+						{
+          			    	yyerror("对象 " + *($1) + " 不可调用", @$.first_line);
+          			    	yyerrok;
+          			  	}
           			}
 				}
 				| TOK_ID '(' expr_list ')'
 				{
+					debugInfo("进入产生式 procedure_call_statement: TOK_ID '(' expr_list ')'");
+					debugInfo("TOK_ID = " + *($1) + "expr_list = " + *($3.targetCode));
           			Symbol* symbol = sym_table.getSymbol(*($1));
-          			if (symbol == nullptr) {
-          			  yyerror("id not defined");
-          			  yyerrok;
-          			} else {
-          			  if (!symbol->type.isCallable()) {
-          			    yyerror("id is not callable");
-          			    yyerrok;
-          			  } else {
-          			    if (symbol->type.dimension != $3.names->size()) {
-          			      yyerror("参数个数不匹配");
-          			      yyerrok;
-          			    } else {
-          			      for (int i = 0; i < $3.types->size(); i++) {
-          			        if ((*($3.types))[i] != symbol->type.args[i]) {
-          			          yyerror(string("第 ") + to_string(i) + " 个参数类型不匹配");
-          			          yyerrok;
-          			        }
-          			      }
-          			      $$ = new string(*($1) + "(" + *($3.targetCode) + ");\n");
-          			    }
-          			  }
+          			if (!symbol) 
+					{
+          			  	yyerror("标识符 " + *($1) + " 未定义", @$.first_line);
+          			  	yyerrok;
+          			} 
+					else 
+					{
+          			  	if (!symbol->type.isCallable()) 
+						{
+          			    	yyerror("对象 " + *($1) + " 不可调用", @$.first_line);
+          			    	yyerrok;
+          			  	}
+						else 
+						{
+          			    	if (symbol->type.dimension != $3.names->size()) 
+							{
+          			      		yyerror("参数个数不匹配, 期望参数个数: " + to_string(symbol->type.dimension) + 
+										", 实际参数个数: " + to_string($3.names->size()), @$.first_line);
+          			      		yyerrok;
+          			    	} 
+							else 
+							{
+          			      		for (int i = 0; i < $3.types->size(); i++) 
+								{
+          			        		if ((*($3.types))[i] != symbol->type.args[i]) 
+									{
+          			          			yyerror("第 " + to_string(i) + " 个参数类型不匹配, 期望类型: " + symbol->type.args[i].toString() +
+												", 实际传入类型: " + (*($3.types))[i].toString() , @$.first_line);
+          			          			yyerrok;
+									}
+								}
+          			      		$$ = new string(*($1) + "(" + *($3.targetCode) + ");\n");
+							}
+						}
           			}
 				};
 
 expr_list: expr_list ',' expression
 				{
+					debugInfo("进入产生式 expr_list: expr_list ',' expression");
+					debugInfo("expression.targetCode = " + *($3.targetCode) + "expression.type = " + $3.type->toString());
           			$$.names = new vector<string>();
           			$$.types = new vector<Type>();
-          			for (int i = 0; i < $1.names->size(); i++) {
-          			  $$.names->push_back((*($1.names))[i]);
-          			  $$.types->push_back((*($1.types))[i]);
+          			for (int i = 0; i < $1.names->size(); i++) 
+					{
+          			  	$$.names->push_back((*($1.names))[i]);
+          			  	$$.types->push_back((*($1.types))[i]);
           			}
           			$$.names->push_back(*($3.targetCode));
           			$$.types->push_back(*($3.type));
@@ -772,6 +879,8 @@ expr_list: expr_list ',' expression
 				}
 				| expression
 				{
+					debugInfo("进入产生式 expr_list: expr_list ',' expression");
+					debugInfo("expression.targetCode = " + *($1.targetCode) + "expression.type = " + $1.type->toString());
           			$$.names = new vector<string>();
           			$$.types = new vector<Type>();
           			$$.names->push_back(*($1.targetCode));
@@ -783,20 +892,28 @@ expression: simple_expr TOK_RELOP simple_expr
 				{
           			string relop;
           			if (!($1.type->isCallable()) && !($1.type->isArray())
-          			&& !($3.type->isCallable()) && !($3.type->isArray())) {
-          			  if (*($2) == "<>") {
-          			    relop = "!=";
-          			  } else if (*($2) == "=") {
-          			    relop = "==";
-          			  } else {
-          			    relop = string(*($2));
-          			  }
-          			  $$.type = new Type();
-          			  $$.type->type = BasicType::BOOLEAN;
-          			  $$.targetCode = new string(*($1.targetCode) + relop + *($3.targetCode));
-          			} else {
-          			  yyerror("关系表达式，类型不正确");
-          			  yyerrok;
+          			&& !($3.type->isCallable()) && !($3.type->isArray())) 
+					{
+          			  	if (*($2) == "<>") 
+						{
+          			    	relop = "!=";
+          			  	} 
+						else if (*($2) == "=") 
+						{
+          			    	relop = "==";
+          			  	} 
+						else 
+						{
+          			    	relop = string(*($2));
+          			  	}
+          			  	$$.type = new Type();
+          			  	$$.type->type = BasicType::BOOLEAN;
+          			  	$$.targetCode = new string(*($1.targetCode) + relop + *($3.targetCode));
+          			} 
+					else 
+					{
+          			  	yyerror("关系表达式，类型不正确", @$.first_line);
+          			  	yyerrok;
           			}
 				}
 				| simple_expr
@@ -807,127 +924,196 @@ expression: simple_expr TOK_RELOP simple_expr
 
 simple_expr: simple_expr TOK_ADDOP term
 				{
+					debugInfo("进入产生式 simple_expr: simple_expr TOK_ADDOP term");
+					debugInfo("simple_expr.type = " + $1.type->toString() + ", simple_expr.targetCode = " + *($1.targetCode) +
+							  ", TOK_ADDOP = " + *($2) + ", term.type = " + $3.type->toString() + 
+							  ", term.targetCode = " + *($3.targetCode));
           			if ($1.type->isCallable() || $1.type->isArray()
-          			|| $3.type->isCallable() || $3.type->isArray()) {
-          			  yyerror("运算类型不正确");
-          			  yyerrok;
-          			} else {
-          			  if (*($2) == "or") {
-          			    if ($1.type->type != BasicType::BOOLEAN || $3.type->type != BasicType::BOOLEAN) {
-          			      yyerror("运算类型不正确");
-          			      yyerrok;
-          			    } else {
-          			      $$.targetCode = new string(*($1.targetCode) + "||" + *($3.targetCode));
-          			      $$.type = new Type();
-          			      $$.type->type = BasicType::BOOLEAN;
-          			    }
-          			  } else {
-          			    if (($1.type->type == BasicType::INTEGER || $1.type->type == BasicType::REAL)
-          			    && ($3.type->type == BasicType::INTEGER || $3.type->type == BasicType::REAL)) {
-          			       $$.type = new Type();
-          			      if ($1.type->type == BasicType::REAL || $3.type->type == BasicType::REAL) {
-          			        $$.type->type = BasicType::REAL;
-          			      } else {
-          			        $$.type->type = BasicType::INTEGER;
-          			      }
-          			      $$.targetCode = new string(*($1.targetCode) + *($2) + *($3.targetCode));
-          			    } else {
-          			      yyerror("运算类型不正确");
-          			      yyerrok;
-          			    }
-          			  }
+          			|| $3.type->isCallable() || $3.type->isArray()) 
+					{
+          			  	yyerror("运算类型不正确", @$.first_line);
+          			  	yyerrok;
+          			} 
+					else 
+					{
+          			  	if (*($2) == "or") 
+						{
+          			    	if ($1.type->type != BasicType::BOOLEAN || $3.type->type != BasicType::BOOLEAN) 
+							{
+          			      		yyerror("or 运算符两侧必须为布尔类型", @$.first_line);
+          			      		yyerrok;
+							} 
+							else 
+							{
+          			      		$$.targetCode = new string(*($1.targetCode) + "||" + *($3.targetCode));
+          			      		$$.type = new Type();
+          			      		$$.type->type = BasicType::BOOLEAN;
+							}
+          			  	} 
+						else 
+						{
+          			    	if (($1.type->type == BasicType::INTEGER || $1.type->type == BasicType::REAL)
+          			    	&& ($3.type->type == BasicType::INTEGER || $3.type->type == BasicType::REAL)) 
+							{
+          			    	   	$$.type = new Type();
+          			    	  	if ($1.type->type == BasicType::REAL || $3.type->type == BasicType::REAL) 
+								{
+          			    	    	$$.type->type = BasicType::REAL;
+          			    	  	} 
+								else 
+								{
+          			    	    	$$.type->type = BasicType::INTEGER;
+          			    	  	}
+          			    	  	$$.targetCode = new string(*($1.targetCode) + *($2) + *($3.targetCode));
+          			    	} 
+							else 
+							{
+          			      		yyerror(*($2) + " 运算符两侧类型无效", @$.first_line);
+          			      		yyerrok;
+          			    	}
+          			  	}
           			}
 				}
 				| term
 				{
+					debugInfo("进入产生式 simple_expr: term");
+					debugInfo("term.type = " + $1.type->toString() + ", term.targetCode = " + *($1.targetCode));
           			$$.type = new Type(*($1.type));
           			$$.targetCode = new string(*($1.targetCode));
 				}
 				| sign term
 				{
+					debugInfo("进入产生式 simple_expr: sign term");
+					debugInfo("sign = " + *($1) + ", term.type = " + $2.type->toString() +
+							  ", term.targetCode = " + *($2.targetCode));
          			$$.type = new Type(*($2.type));
          			$$.targetCode = new string(*($1) + *($2.targetCode));
 				};
 
 term: term TOK_MULOP factor
 				{
+					debugInfo("进入产生式 term: term TOK_MULOP factor");
+					debugInfo("term.type = " + $1.type->toString() + ", term.targetCode = " + *($1.targetCode) +
+							  ", TOK_MULOP = " + *($2) + ", factor.type = " + $3.type->toString() + 
+							  ", factor.targetCode = " + *($3.targetCode));
           			if ($1.type->isCallable() || $1.type->isArray() ||
-					    $3.type->isCallable() || $3.type->isArray()) {
-          			  	yyerror("运算类型不正确");
+					    $3.type->isCallable() || $3.type->isArray()) 
+					{
+          			  	yyerror("运算类型不正确", @$.first_line);
           			  	yyerrok;
-          			} else {
-          			  	if (*($2) == "and") {
-          			  	  if ($1.type->type != BasicType::BOOLEAN || $3.type->type != BasicType::BOOLEAN) {
-          			  	    yyerror("运算类型不正确");
-          			  	    yyerrok;
-          			  	  } else {
-          			  	    $$.targetCode = new string(*($1.targetCode) + "&&" + *($3.targetCode));
-          			  	    $$.type = new Type();
-          			  	    $$.type->type = BasicType::BOOLEAN;
-          			  	  }
-          			  	} else if (*($2) == "div") {
-          			  	  if ($1.type->type != BasicType::INTEGER || $3.type->type != BasicType::INTEGER) {
-          			  	    yyerror("运算类型不正确");
-          			  	    yyerrok;
-          			  	  } else {
-          			  	    $$.targetCode = new string(*($1.targetCode) + " / " + *($3.targetCode));
-          			  	    $$.type = new Type();
-          			  	    $$.type->type = BasicType::INTEGER;
-          			  	  }
-          			  	} else if ( *($2) == "mod") {
-          			  	  if ($1.type->type != BasicType::INTEGER || $3.type->type != BasicType::INTEGER) {
-          			  	    yyerror("运算类型不正确");
-          			  	    yyerrok;
-          			  	  } else {
-          			  	    $$.targetCode = new string(*($1.targetCode) + " % " + *($3.targetCode));
-          			  	    $$.type = new Type();
-          			  	    $$.type->type = BasicType::INTEGER;
-          			  	  }
-          			  } else {
+          			} 
+					else 
+					{
+          			  	if (*($2) == "and") 
+						{
+          			  	  	if ($1.type->type != BasicType::BOOLEAN || $3.type->type != BasicType::BOOLEAN) 
+						  	{
+          			  	    	yyerror("and 运算符两侧必须为布尔类型", @$.first_line);
+          			  	    	yyerrok;
+          			  	  	}
+							else 
+							{
+          			  	    	$$.targetCode = new string(*($1.targetCode) + "&&" + *($3.targetCode));
+          			  	    	$$.type = new Type();
+          			  	    	$$.type->type = BasicType::BOOLEAN;
+          			  	  	}
+          			  	} 
+						else if (*($2) == "div") 
+						{
+          			  	  	if ($1.type->type != BasicType::INTEGER || $3.type->type != BasicType::INTEGER) 
+							{
+          			  	    	yyerror("div 运算符两侧类型必须为整数", @$.first_line);
+          			  	    	yyerrok;
+          			  	  	} 
+							else 
+							{
+          			  	    	$$.targetCode = new string(*($1.targetCode) + " / " + *($3.targetCode));
+          			  	    	$$.type = new Type();
+          			  	    	$$.type->type = BasicType::INTEGER;
+          			  	  	}
+          			  	} 
+						else if ( *($2) == "mod") 
+						{
+          			  	  	if ($1.type->type != BasicType::INTEGER || $3.type->type != BasicType::INTEGER) 
+							{
+          			  	    	yyerror("mod 运算符两侧类型必须为整数", @$.first_line);
+          			  	    	yyerrok;
+          			  	  	}
+							else 
+							{
+          			  	    	$$.targetCode = new string(*($1.targetCode) + " % " + *($3.targetCode));
+          			  	    	$$.type = new Type();
+          			  	    	$$.type->type = BasicType::INTEGER;
+          			  	  	}
+          			  	} 
+						else 
+						{
           			    	if (($1.type->type == BasicType::INTEGER || $1.type->type == BasicType::REAL)
-          			    	&& ($3.type->type == BasicType::INTEGER || $3.type->type == BasicType::REAL)) {
-          			    	   $$.type = new Type();
-          			    	  if ($1.type->type == BasicType::REAL || $3.type->type == BasicType::REAL) {
-          			    	    $$.type->type = BasicType::REAL;
-          			    	  } else {
-          			    	    $$.type->type = BasicType::INTEGER;
-          			    	  }
-          			    	  $$.targetCode = new string(*($1.targetCode) + *($2) + *($3.targetCode));
-          			    	} else {
-          			    	  yyerror("运算类型不正确");
-          			    	  yyerrok;
+          			    	&& ($3.type->type == BasicType::INTEGER || $3.type->type == BasicType::REAL)) 
+							{
+          			    		$$.type = new Type();
+          			    	  	if ($1.type->type == BasicType::REAL || $3.type->type == BasicType::REAL) 
+								{
+          			    	    	$$.type->type = BasicType::REAL;
+          			    	  	} 
+								else 
+								{
+          			    	    	$$.type->type = BasicType::INTEGER;
+          			    	  	}
+          			    	  	$$.targetCode = new string(*($1.targetCode) + *($2) + *($3.targetCode));
+          			    	} 
+							else 
+							{
+          			    	  	yyerror("运算类型不正确", @$.first_line);
+          			    	  	yyerrok;
           			    	}
-          			  }
+          			  	}
           			}
 				}
 				| factor
 				{
+					debugInfo("进入产生式 term: factor");
+					debugInfo("factor.type = " + $1.type->toString() + ", factor.targetCode = " + *($1.targetCode));
           			$$.type = new Type(*($1.type));
           			$$.targetCode = new string(*($1.targetCode));
 				};
 
 factor: TOK_ID
 				{
+					debugInfo("进入产生式 factor: TOK_ID");
+					debugInfo("TOK_ID = " + *($1));
           			Symbol* symbol = sym_table.getSymbol(*($1));
-          			if (symbol == nullptr) {
-          			  	yyerror("id not defined");
+          			if (!symbol) 
+					{
+          			  	yyerror("标识符 " + *($1) + " 未定义", @$.first_line);
           			  	yyerrok;
-          			} else {
-          			  	if (symbol->type.isCallable()) {
-          			  	  	if (symbol->type.ret_type == BasicType::VOID) {
-          			  	  	  	yyerror("id不能是一个void类型的函数或过程");
+          			} 
+					else 
+					{
+          			  	if (symbol->type.isCallable()) 
+						{
+          			  	  	if (symbol->type.ret_type == BasicType::VOID) 
+							{
+          			  	  	  	yyerror("标识符 " + *($1) + " 不能是一个void类型的函数或过程", @$.first_line);
           			  	  	  	yyerrok;
-          			  	  	} else {
-          			  	  	  	if (symbol->type.dimension != 0) {
-          			  	  	  	  	yyerror("函数不能无参调用");
+          			  	  	} 
+							else 
+							{
+          			  	  	  	if (symbol->type.dimension != 0) 
+								{
+          			  	  	  		yyerror("函数 " + *($1) + " 不能无参调用, 期待参数个数: " + to_string(symbol->type.dimension), @$.first_line);
           			  	  	  	  	yyerrok;
-          			  	  	  	} else {
+          			  	  	  	} 
+								else 
+								{
           			  	  	  	  	$$.type = new Type();
           			  	  	  	  	$$.type->type = symbol->type.ret_type;
           			  	  	  	  	$$.targetCode = new string(*($1) + "()");
           			  	  	  	}
           			  	  	}
-          			  	} else {
+          			  	} 
+						else 
+						{
           			  	  	$$.type = new Type(symbol->type);
           			  	  	$$.targetCode = new string(*($1));
           			  	}
@@ -935,31 +1121,50 @@ factor: TOK_ID
 				}
 				| TOK_ID '(' expr_list ')'
 				{
+					debugInfo("进入产生式 factor: TOK_ID '(' expr_list ')'");
+					debugInfo("TOK_ID = " + *($1) + ", expr_list.targetCode=" + *($3.targetCode));
           			Symbol* symbol = sym_table.getSymbol(*($1));
-          			if (symbol == nullptr) {
-          			  yyerror("id not defined");
-          			  yyerrok;
-          			} else {
-          			  	if (!symbol->type.isCallable()) {
-          			  	  yyerror("id必须是一个可以调用");
-          			  	  yyerrok;
-          			  	} else {
-          			  	  	if (symbol->type.ret_type == BasicType::VOID) {
-          			  	  	  yyerror("被调用的函数必须有返回值");
-          			  	  	  yyerrok;
-          			  	  	} else {
-          			  	  	  	if ($3.names->size() != symbol->type.dimension) {
-          			  	  	  	  yyerror("被调用函数的参数个数不匹配");
-          			  	  	  	  yyerrok;
-          			  	  	  	} else {
-          			  	  	  	  	for (int i = 0; i < $3.types->size(); i++) {
-          			  	  	  	  	  	if ((*($3.types))[i] != symbol->type.args[i]) {
-          			  	  	  	  	  	  	yyerror(string("第 ") + to_string(i) + " 个参数类型不匹配");
-          			  	  	  	  	  	  	yyerrok;
-          			  	  	  	  	  	}
+          			if (symbol == nullptr) 
+					{
+          			  	yyerror("标识符 " + *($1) + " 未定义", @$.first_line);
+          			  	yyerrok;
+          			} 
+					else 
+					{
+          			  	if (!symbol->type.isCallable()) 
+						{
+          			  	  	yyerror("对象" + *($1) + "不是一个可以调用的对象, 实际类型为: " + symbol->type.toString(), @$.first_line);
+          			  	  	yyerrok;
+          			  	} 
+						else 
+						{
+          			  	  	if (symbol->type.ret_type == BasicType::VOID) 
+							{
+          			  	  	  	yyerror("函数 " + *($1) + " 被调用但是没有返回值", @$.first_line);
+          			  	  	  	yyerrok;
+          			  	  	} 
+							else 
+							{
+          			  	  	  	if ($3.names->size() != symbol->type.dimension) 
+								{
+          			  	  	  	  	yyerror("参数个数不匹配, 期望参数个数: " + to_string(symbol->type.dimension) + 
+											", 实际参数个数: " + to_string($3.names->size()), @$.first_line);
+          			  	  	  	  	yyerrok;
+          			  	  	  	} 
+								else 
+								{
+          			  	  	  	  	for (int i = 0; i < $3.types->size(); i++) 
+									{
+          			  	  	  	  	  	if ((*($3.types))[i] != symbol->type.args[i]) 
+										{
+          			  	  	  	  	  	  	yyerror("第 " + to_string(i) + " 个参数类型不匹配, 期望类型: " + symbol->type.args[i].toString() +
+												", 实际传入类型: " + (*($3.types))[i].toString() , @$.first_line);
+          			  	  	  	  	  		yyerrok;
+										}
           			  	  	  	  	}
-          			  	  	  	  $$.targetCode = new string(*($1) + "(" + *($3.targetCode) + ")");
-										  // TODO $$.type assign?
+          			  	  	  	  	$$.targetCode = new string(*($1) + "(" + *($3.targetCode) + ")");
+									$$.type = new Type();
+									$$.type->type = symbol->type.type;
           			  	  	  	}
           			  	  	}
           			  	}
@@ -969,19 +1174,19 @@ factor: TOK_ID
 				{
 					if ($3.type->type != BasicType::INTEGER)
 					{
-						yyerror("数组下标访问必须使用整数");
+						yyerror("数组下标访问必须使用整数", @$.first_line);
 						yyerrok;
 					}
 
 					if (!sym_table.isInScope(*($1)))
 					{
-						yyerror(*($1) + " 未定义");
+						yyerror(*($1) + " 未定义", @$.first_line);
 						yyerrok;
 					}
 					Symbol *const sym_ptr = sym_table.getSymbol(*($1));
 					if (sym_ptr && !sym_ptr->type.isArray())
 					{
-						yyerror(*($1) + "不是数组类型");
+						yyerror(*($1) + "不是数组类型", @$.first_line);
 						yyerrok;
 					}
 
@@ -1012,7 +1217,7 @@ factor: TOK_ID
 				{
 					if ($2.type->type != BasicType::BOOLEAN)
 					{
-						yyerror("NOT 后面必须为布尔表达式");
+						yyerror("NOT 后面必须为布尔表达式", @$.first_line);
 						yyerrok;
 					}
 					$$.type = new Type();
@@ -1044,9 +1249,22 @@ sign: '+'
 
 %%
 
+string toLower(const string &str)
+{
+	string res = str;
+	for (int i = 0; i < res.size(); i++)
+		res[i] = tolower(res[i]);
+	return res;
+}
+
 void yyerror(const string &err_msg)
 {
-	cerr << err_msg << endl;
+	cerr << "!ERROR!: " << err_msg << endl;
+}
+
+void yyerror(const string &err_msg, int line_no)
+{
+	cerr << "!ERROR!(" << line_no << "): " << err_msg << endl;
 }
 
 int main(void) {

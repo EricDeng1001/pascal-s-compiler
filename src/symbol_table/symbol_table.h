@@ -9,6 +9,7 @@
 #include <set>
 #include <variant>
 #include <cassert>
+#include <cctype>
 #include <type_traits>
 
 #define ENABLE_TEST_FUNCTIONS
@@ -27,6 +28,20 @@ namespace PascalSToCPP
         LAST_VAL = VOID,
     };
 
+    static const inline std::string &BasicTypeStr(BasicType basic_type)
+    {
+        static const std::map<BasicType, std::string> type_str =
+        {
+            {BasicType::INTEGER, "integer"},
+            {BasicType::REAL, "real"},
+            {BasicType::CHAR, "char"},
+            {BasicType::BOOLEAN, "boolean"},
+            {BasicType::CALLABLE, "callable"},
+            {BasicType::VOID, "void"},
+        };
+        return type_str.at(basic_type);
+    }
+    
     /**
      * @brief 将给出的枚举值转换为整数
      *
@@ -105,6 +120,13 @@ namespace PascalSToCPP
             assert(type == BasicType::CALLABLE); // 检查是否对不可调用对象检查是否有返回值
             return ret_type != BasicType::VOID;
         }
+
+        std::string toString() const
+        {
+            std::string res = "[";
+            res += "BasicType=" + BasicTypeStr(type) +"]";
+            return res;
+        }
     };
 
     struct SymbolBuilder;
@@ -137,6 +159,7 @@ namespace PascalSToCPP
         // 获取所有引用该符号的行数
         std::vector<std::size_t> getRefAt() const { return std::vector<std::size_t>(ref_at.begin(), ref_at.end()); }
 
+        std::string toString() const { return "[Name=" + name + ", Type=" + type.toString() + "]"; }
     private:
         std::set<std::size_t> ref_at{}; // 记录符号被引用的行数
     };
