@@ -1380,6 +1380,18 @@ parameter_lists: parameter_lists ';' parameter_list
 					$$.paraTypeAndNames->push_back($3.paraTypeAndNames->front());
 					debugInfoBreak();
 				}
+				| parameter_lists error parameter_list
+				{
+					debugInfo("进入产生式 parameter_lists: parameter_lists ';' parameter_list");
+					syntax_err_suply("参数列表间缺少分号分隔");
+					yyerrok;
+					$$.targetCode = new string(*($1.targetCode));
+					$$.targetCode->push_back(','); // 分隔两个参数列表
+					$$.targetCode->append(*($3.targetCode));
+					$$.paraTypeAndNames = new vector<pair<Type, vector<string>>>(*($1.paraTypeAndNames));
+					$$.paraTypeAndNames->push_back($3.paraTypeAndNames->front());
+					debugInfoBreak();
+				}
 				| parameter_list
 				{
 					debugInfo("进入产生式 parameter_lists: parameter_list");
@@ -1390,6 +1402,39 @@ parameter_lists: parameter_lists ';' parameter_list
 
 parameter_list: TOK_VAR identifier_list ':' type
 				{
+					// 填写参数表
+					Type &temp_type = *($4.type);
+					temp_type.is_ref = true;
+
+					$$.paraTypeAndNames = new vector<pair<Type, vector<string>>>();
+				    $$.paraTypeAndNames->push_back({temp_type, *($2.names)});
+
+					$$.targetCode = new string();
+
+					for (int i = 0; i < $2.names->size(); i++)
+					{
+						$$.targetCode->append(*($4.targetCode));
+						if (temp_type.isArray()) // 数组的引用区别对待
+						{
+							$$.targetCode->append(" (&")
+										  .append($2.names->at(i))
+										  .append(")")
+										  .append(temp_type.getArrayPeriodsString())
+										  .append(",");
+						}
+						else
+						{
+							$$.targetCode->append(" &")
+									 	  .append($2.names->at(i))
+									 	  .append(",");
+						}
+					}
+					$$.targetCode->pop_back(); // 将最后一个逗号弹出
+				}
+				| TOK_VAR identifier_list error type
+				{
+					syntax_err_suply("参数列表中标识符和类型间缺少冒号");
+					yyerrok;
 					// 填写参数表
 					Type &temp_type = *($4.type);
 					temp_type.is_ref = true;
@@ -1439,10 +1484,44 @@ parameter_list: TOK_VAR identifier_list ':' type
 						$$.targetCode->push_back(',');
 					}
 					$$.targetCode->pop_back(); // 将最后一个逗号弹出
+				}
+				| identifier_list error type
+				{
+					syntax_err_suply("参数列表中标识符和类型间缺少冒号");
+					yyerrok;
+				    // 填写参数表
+					Type &temp_type = *($3.type);
+					temp_type.is_ref = false;
+
+					$$.paraTypeAndNames = new vector<pair<Type, vector<string>>>();
+				    $$.paraTypeAndNames->push_back({temp_type, *($1.names)});
+
+					$$.targetCode = new string();
+
+					for (int i = 0; i < $1.names->size(); i++)
+					{
+						$$.targetCode->append(*($3.targetCode) + " ")
+									  .append($1.names->at(i));
+						if (temp_type.isArray())
+							$$.targetCode->append(temp_type.getArrayPeriodsString());
+						$$.targetCode->push_back(',');
+					}
+					$$.targetCode->pop_back(); // 将最后一个逗号弹出
 				};
 
 compound_statement: TOK_BEGIN optional_statements TOK_END
 				{
+					string temp_code;
+					temp_code.append("{\n")
+							 .append(*($2))
+							 .append("\n}\n");
+					// $$ = new string(move(temp_code));
+					$$ = new string(temp_code);
+				}
+				| error optional_statements TOK_END
+				{
+					syntax_err_suply("复合语句缺少 BEGIN");
+					yyerrok;
 					string temp_code;
 					temp_code.append("{\n")
 							 .append(*($2))
@@ -1490,12 +1569,10 @@ statement: variable TOK_ASSIGNOP expression
 					if (lhs_type != rhs_type)
 					{
 						yyerror("赋值语句两边的类型不相等");
-						yyerrok;
 					}
 					else if ($1.type->isArray())
 					{
 						yyerror("赋值语句不直接应用于数组");
-						yyerrok;
 					}
 
 					string temp_code;
@@ -1536,6 +1613,27 @@ statement: variable TOK_ASSIGNOP expression
 					{
 						yyerror("if 后的表达式必须为布尔表达式");
 						yyerrok;
+					}
+
+					string temp_code;
+					temp_code.append(string("if (") + *($2.targetCode) + ") ")
+							 .append("{\n")
+							 .append(*($4))
+							 .append("\n}\n");
+					$$ = new string(temp_code);
+					debugInfoBreak();
+				}
+				| TOK_IF expression error statement
+				{
+					debugInfo("进入产生式 statement: TOK_IF expression TOK_THEN statement");
+					debugInfo("expression.type=" + $2.type->toString() + ", expression.targetCode=" + *($2.targetCode) +
+							  ", statement.targetCode=" + *($4));
+					syntax_err_suply("if 语句缺少 then");
+					yyerrok;
+					Type expr_type = *($2.type);
+					if (expr_type.type != BasicType::BOOLEAN)
+					{
+						yyerror("if 后的表达式必须为布尔表达式");
 					}
 
 					string temp_code;
@@ -1588,6 +1686,27 @@ statement: variable TOK_ASSIGNOP expression
 					$$ = new string(temp_code);
 					debugInfoBreak();
 				}
+				| TOK_WHILE expression error statement
+				{
+					debugInfo("进入产生式 statement: TOK_WHILE expression TOK_DO statement");
+					debugInfo("expression.type=" + $2.type->toString() + ", statement=" + *($4));
+					syntax_err_suply("while 语句缺少 do");
+					yyerrok;
+					Type expr_type = *($2.type);
+					if (expr_type.type != BasicType::BOOLEAN)
+					{
+						yyerror("while 后的表达式必须为布尔表达式");
+						yyerrok;
+					}
+
+					string temp_code;
+					temp_code.append("while (" + *($2.targetCode) + ") ")
+							 .append("{\n")
+							 .append(*($4) + "\n")
+							 .append("}\n");
+					$$ = new string(temp_code);
+					debugInfoBreak();
+				}
 				| TOK_READ '(' variable_list ')'
 				{
 					debugInfo("进入产生式 statement: TOK_READ '(' variable_list ')'");
@@ -1608,7 +1727,6 @@ statement: variable TOK_ASSIGNOP expression
 						if ($3.types->at(i).type == BasicType::VOID)
 						{
 							yyerror("write 中的表达式的值不能为空");
-							yyerrok;
 							break;
 						}
 					}
@@ -1625,17 +1743,14 @@ statement: variable TOK_ASSIGNOP expression
 					if (!id_sym)
 					{
 						yyerror("标识符 " + *($2) + " 未定义");
-						yyerrok;
 					}
 					else if (id_sym->type.type != BasicType::INTEGER)
 					{
 						yyerror("循环变量" + *($2) + "类型不为整数, 实际类型为: " + id_sym->type.toString());
-						yyerrok;
 					}
 					else if ($4.type->type != BasicType::INTEGER || $6.type->type != BasicType::INTEGER)
 					{
 						yyerror("循环界限类型不为整数");
-						yyerrok;
 					}
 
 					string temp_code = "for (";
@@ -1646,10 +1761,99 @@ statement: variable TOK_ASSIGNOP expression
 							 .append(*($8) + "\n")
 							 .append("}\n");
 					$$ = new string(temp_code);
-				};
+				}
+				| TOK_FOR TOK_ID TOK_ASSIGNOP expression error expression TOK_DO statement
+				{
+					syntax_err_suply("for to do 语句缺少 to");
+					yyerrok;
+					Symbol *id_sym = sym_table.getSymbol(*($2));
+					if (!id_sym)
+					{
+						yyerror("标识符 " + *($2) + " 未定义");
+					}
+					else if (id_sym->type.type != BasicType::INTEGER)
+					{
+						yyerror("循环变量" + *($2) + "类型不为整数, 实际类型为: " + id_sym->type.toString());
+					}
+					else if ($4.type->type != BasicType::INTEGER || $6.type->type != BasicType::INTEGER)
+					{
+						yyerror("循环界限类型不为整数");
+					}
+
+					string temp_code = "for (";
+					temp_code.append(*($2) + " = " + *($4.targetCode) + "; ")
+							 .append(*($2) + " <= " + *($6.targetCode) + "; ")
+							 .append(*($2) + "++)\n")
+							 .append("{\n")
+							 .append(*($8) + "\n")
+							 .append("}\n");
+					$$ = new string(temp_code);
+				}
+				| TOK_FOR TOK_ID TOK_ASSIGNOP expression TOK_TO expression error statement
+				{
+					syntax_err_suply("for to do 语句缺少 do");
+					yyerrok;
+					Symbol *id_sym = sym_table.getSymbol(*($2));
+					if (!id_sym)
+					{
+						yyerror("标识符 " + *($2) + " 未定义");
+					}
+					else if (id_sym->type.type != BasicType::INTEGER)
+					{
+						yyerror("循环变量" + *($2) + "类型不为整数, 实际类型为: " + id_sym->type.toString());
+					}
+					else if ($4.type->type != BasicType::INTEGER || $6.type->type != BasicType::INTEGER)
+					{
+						yyerror("循环界限类型不为整数");
+					}
+
+					string temp_code = "for (";
+					temp_code.append(*($2) + " = " + *($4.targetCode) + "; ")
+							 .append(*($2) + " <= " + *($6.targetCode) + "; ")
+							 .append(*($2) + "++)\n")
+							 .append("{\n")
+							 .append(*($8) + "\n")
+							 .append("}\n");
+					$$ = new string(temp_code);
+				}
+				| TOK_FOR TOK_ID error expression TOK_TO expression error statement
+				{
+					syntax_err_suply("for to do 语句缺少赋值符号");
+					yyerrok;
+					Symbol *id_sym = sym_table.getSymbol(*($2));
+					if (!id_sym)
+					{
+						yyerror("标识符 " + *($2) + " 未定义");
+					}
+					else if (id_sym->type.type != BasicType::INTEGER)
+					{
+						yyerror("循环变量" + *($2) + "类型不为整数, 实际类型为: " + id_sym->type.toString());
+					}
+					else if ($4.type->type != BasicType::INTEGER || $6.type->type != BasicType::INTEGER)
+					{
+						yyerror("循环界限类型不为整数");
+					}
+
+					string temp_code = "for (";
+					temp_code.append(*($2) + " = " + *($4.targetCode) + "; ")
+							 .append(*($2) + " <= " + *($6.targetCode) + "; ")
+							 .append(*($2) + "++)\n")
+							 .append("{\n")
+							 .append(*($8) + "\n")
+							 .append("}\n");
+					$$ = new string(temp_code);
+				}
+				;
 
 variable_list: variable_list ',' variable
 				{
+					$$.vars = new vector<pair<Type, string>>(*($1.vars));
+					$$.vars->push_back({*($3.type), *($3.targetCode)});
+				}
+			  | variable_list error variable
+				{
+					syntax_err_suply("变量列表缺少逗号分隔");
+					yyerrok;
 					$$.vars = new vector<pair<Type, string>>(*($1.vars));
 					$$.vars->push_back({*($3.type), *($3.targetCode)});
 				}
@@ -1832,6 +2036,24 @@ expr_list: expr_list ',' expression
 					debugInfo("进入产生式 expr_list: expr_list ',' expression");
 					debugInfo("expression.targetCode = " + *($3.targetCode) + ", expression.type = " + $3.type->toString());
           			$$.names = new vector<string>();
+          			$$.types = new vector<Type>();
+          			for (int i = 0; i < $1.names->size(); i++) 
+					{
+          			  	$$.names->push_back((*($1.names))[i]);
+          			  	$$.types->push_back((*($1.types))[i]);
+          			}
+          			$$.names->push_back(*($3.targetCode));
+          			$$.types->push_back(*($3.type));
+          			$$.targetCode = new string(*($1.targetCode) + ", " + *($3.targetCode));
+					debugInfoBreak();
+				}
+				| expr_list error expression
+				{
+					debugInfo("进入产生式 expr_list: expr_list ',' expression");
+					debugInfo("expression.targetCode = " + *($3.targetCode) + ", expression.type = " + $3.type->toString());
+					syntax_err_suply("表达式间缺少逗号分隔");
+					yyerrok;
+					$$.names = new vector<string>();
           			$$.types = new vector<Type>();
           			for (int i = 0; i < $1.names->size(); i++) 
 					{
