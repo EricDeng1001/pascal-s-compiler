@@ -776,7 +776,33 @@ const_declarations: TOK_CONST const_declaration ';'
 
 const_declaration: const_declaration ';' ID '=' const_value
 				{
+					debugInfo("进入产生式 const_declaration: const_declaration ; ID = const_value");
+					string tmp_target = *($1.targetCode);
+					Type t{};
+					if($5.isReal)
+					{
+						t.type = BasicType::REAL;
+						t.is_constant = true;
+						Symbol sym(*($3.names), t);
+						pair<bool, int> res = sym_table.InsertSymbol(sym);
+						if(res.first == false) 
+						{
+							yyerror("符号 " + sym.name + " 重复定义");
+						}
+						else 
+						{	// 生成目标代码
+							tmp_target = 
+							string target = to_string($3.arrayTop - $3.arrayBottom  + 1);
+							if(i != ($1.names)->size() - 1)
+								tmp_target += " " + (*($1.names))[i] + "[" + target + "],";
+							else
+								tmp_target += " " + (*($1.names))[i] + "[" + target + "];\n";
+						}
+					}else
+					{
 
+					}
+					debugInfoBreak();
 				}
 				| const_declaration error ID '=' const_value
 				{
