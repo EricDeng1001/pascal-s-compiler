@@ -958,7 +958,8 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 						int dimension = 0;
 						for (const auto &[type, names] : *($3.paraTypeAndNames))
 						{
-							func_builder.addArg(type);
+							for (int i = 0; i < names.size(); i++)
+								func_builder.addArg(type);
 							dimension += names.size();
 						}
 						func_builder.setDimension(dimension);
@@ -1024,7 +1025,8 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 						int dimension = 0;
 						for (const auto &[type, names] : *($3.paraTypeAndNames))
 						{
-							func_builder.addArg(type);
+							for (int i = 0; i < names.size(); i++)
+								func_builder.addArg(type);
 							dimension += names.size();
 						}
 						func_builder.setDimension(dimension);
@@ -1090,7 +1092,8 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 						int dimension = 0;
 						for (const auto &[type, names] : *($3.paraTypeAndNames))
 						{
-							func_builder.addArg(type);
+							for (int i = 0; i < names.size(); i++)
+								func_builder.addArg(type);
 							dimension += names.size();
 						}
 						func_builder.setDimension(dimension);
@@ -1155,7 +1158,8 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 						int dimension = 0;
 						for (const auto &[type, names] : *($3.paraTypeAndNames))
 						{
-							func_builder.addArg(type);
+							for (int i = 0; i < names.size(); i++)
+								func_builder.addArg(type);
 							dimension += names.size();
 						}
 						func_builder.setDimension(dimension);
@@ -1236,7 +1240,8 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 						int dimension = 0;
 						for (const auto &[type, names] : *($3.paraTypeAndNames))
 						{
-							func_builder.addArg(type);
+							for (int i = 0; i < names.size(); i++)
+								func_builder.addArg(type);
 							dimension += names.size();
 						}
 						func_builder.setDimension(dimension);
@@ -1302,7 +1307,8 @@ subprogram_head: TOK_FUNCTION TOK_ID arguments ':' standard_type ';'
 						int dimension = 0;
 						for (const auto &[type, names] : *($3.paraTypeAndNames))
 						{
-							func_builder.addArg(type);
+							for (int i = 0; i < names.size(); i++)
+								func_builder.addArg(type);
 							dimension += names.size();
 						}
 						func_builder.setDimension(dimension);
@@ -1915,6 +1921,7 @@ variable: TOK_ID
 							else 
 							{
           			      		$$.type = new Type(symbol->type);
+								$$.targetCode = new string(*($1));
           			    	}
           			  	} 
 						else
@@ -2043,7 +2050,7 @@ procedure_call_statement: TOK_ID
 								{
           			        		if ((*($3.types))[i].type != symbol->type.args[i].type) 
 									{
-          			          			yyerror("第 " + to_string(i) + " 个参数类型不匹配, 期望类型: " + symbol->type.args[i].toString() +
+          			          			yyerror("第 " + to_string(i+1) + " 个参数类型不匹配, 期望类型: " + symbol->type.args[i].toString() +
 												", 实际传入类型: " + (*($3.types))[i].toString() );
           			          			yyerrok;
 									}
@@ -2408,7 +2415,7 @@ factor: TOK_ID
 									{
           			  	  	  	  	  	if ((*($3.types))[i].type != symbol->type.args[i].type) 
 										{
-          			  	  	  	  	  	  	yyerror("第 " + to_string(i) + " 个参数类型不匹配, 期望类型: " + symbol->type.args[i].toString() +
+          			  	  	  	  	  	  	yyerror("第 " + to_string(i+1) + " 个参数类型不匹配, 期望类型: " + symbol->type.args[i].toString() +
 												", 实际传入类型: " + (*($3.types))[i].toString() );	
 											yyerrok;
 										}
