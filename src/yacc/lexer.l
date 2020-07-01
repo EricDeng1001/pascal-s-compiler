@@ -5,13 +5,14 @@
 #include <utility>
 #include <iostream>
 #include <fstream>
-
+#include "parser.tab.h"
+#define YY_USER_ACTION yylloc.first_line = yylloc.last_line = yylineno;
 using namespace std;
-
 %}
 
+%option yylineno caseless
 
-white_space       [ \t\n]+
+white_space       [ \t\n\r]+
 digit             [0-9]
 digits		      [0-9]+
 fraction          (\.{digits})?
@@ -20,53 +21,56 @@ num               {digits}{fraction}{exponent}
 
 letter            [A-Za-z]
 id                {letter}({letter}|{digit})*
-
-block_annotation  \{\*[.\n]*\*\}
-line_annotation   \{[.]*\}
+charliteral       '([A-Za-z :,\.]|(\\n)|(\\t))+'
+block_annotation  \{\*.*\*\}
+line_annotation   \{.*\}
 annotation        {block_annotation}|{line_annotation}
 
 %%
 
 
-program                           {yylval.targetCode = new string(yytext); Type return PROGRAM;}
-var								  {yylval.targetCode = new string(yytext); Type return VAR;}
-array                             {yylval.targetCode = new string(yytext); Type return ARRAY;}
-of                                {yylval.targetCode = new string(yytext); Type return OF;}
-record                            {yylval.targetCode = new string(yytext); Type return RECORD;}
-integer                           {yylval.targetCode = new string(yytext); Type return INTEGER;}
-real                              {yylval.targetCode = new string(yytext); Type return REAL;}
-boolean                           {yylval.targetCode = new string(yytext); Type return BOOLEAN;}
-function                          {yylval.targetCode = new string(yytext); Type return FUNCTION;}
-procedure                         {yylval.targetCode = new string(yytext); Type return PROCEDURE;}
-begin                             {yylval.targetCode = new string(yytext); Type return BEGIN;}
-end                               {yylval.targetCode = new string(yytext); Type return END;}
-if                                {yylval.targetCode = new string(yytext); Type return IF;}
-then                              {yylval.targetCode = new string(yytext); Type return THEN;}
-else                              {yylval.targetCode = new string(yytext); Type return ELSE;}
-while                             {yylval.targetCode = new string(yytext); Type return WHILE;}
-do                                {yylval.targetCode = new string(yytext); Type return DO;}
-read                              {yylval.targetCode = new string(yytext); Type return READ;}
-write                             {yylval.targetCode = new string(yytext); Type return WRITE;}
-not                               {yylval.targetCode = new string(yytext); Type return NOT;}
-true                              {yylval.targetCode = new string(yytext); Type return TRUE;}
-false                             {yylval.targetCode = new string(yytext); Type return FALSE;}
+program                           {yylval.targetCode = new string(yytext); return TOK_PROGRAM;}
+var								  {yylval.targetCode = new string(yytext); return TOK_VAR;}
+array                             {yylval.targetCode = new string(yytext); return TOK_ARRAY;}
+of                                {yylval.targetCode = new string(yytext); return TOK_OF;}
+record                            {yylval.targetCode = new string(yytext); return TOK_RECORD;}
+integer                           {yylval.targetCode = new string(yytext); return TOK_INTEGER;}
+real                              {yylval.targetCode = new string(yytext); return TOK_REAL;}
+boolean                           {yylval.targetCode = new string(yytext); return TOK_BOOLEAN;}
+char 							  {yylval.targetCode = new string(yytext); return TOK_CHAR;}
+function                          {yylval.targetCode = new string(yytext); return TOK_FUNCTION;}
+procedure                         {yylval.targetCode = new string(yytext); return TOK_PROCEDURE;}
+begin                             {yylval.targetCode = new string(yytext); return TOK_BEGIN;}
+end                               {yylval.targetCode = new string(yytext); return TOK_END;}
+if                                {yylval.targetCode = new string(yytext); return TOK_IF;}
+to 								  {yylval.targetCode = new string(yytext); return TOK_TO;}
+for 							  {yylval.targetCode = new string(yytext); return TOK_FOR;}
+then                              {yylval.targetCode = new string(yytext); return TOK_THEN;}
+else                              {yylval.targetCode = new string(yytext); return TOK_ELSE;}
+while                             {yylval.targetCode = new string(yytext); return TOK_WHILE;}
+do                                {yylval.targetCode = new string(yytext); return TOK_DO;}
+read                              {yylval.targetCode = new string(yytext); return TOK_READ;}
+write                             {yylval.targetCode = new string(yytext); return TOK_WRITE;}
+not                               {yylval.targetCode = new string(yytext); return TOK_NOT;}
+true                              {yylval.targetCode = new string(yytext); return TOK_TRUE;}
+false                             {yylval.targetCode = new string(yytext); return TOK_FALSE;}
 
-("="|"<>"|"<"|"<="|">"|">=")      {yylval.targetCode = new string(yytext); Type return RELOP;}
-("+"|"-"|"or")                    {yylval.targetCode = new string(yytext); Type return ADDOP;}
-("*"|"/"|"div"|"mod"|"and")       {yylval.targetCode = new string(yytext); Type return MULOP;}
-":="                              {yylval.targetCode = new string(yytext); Type return ASSIGNOP;}
+("="|"<>"|"<"|"<="|">"|">=")      {yylval.targetCode = new string(yytext); return TOK_RELOP;}
+("+"|"-"|"or")                    {yylval.targetCode = new string(yytext); return TOK_ADDOP;}
+("*"|"/"|"div"|"mod"|"and")       {yylval.targetCode = new string(yytext); return TOK_MULOP;}
+":="                              {yylval.targetCode = new string(yytext); return TOK_ASSIGNOP;}
 
-("."|";"|","|":"|"["|"]"|"("|")") { yylval.targetCode = new string(yytext); Type return *yytext;}
+("."|";"|","|":"|"["|"]"|"("|")") { yylval.targetCode = new string(yytext); return *yytext;}
 
-{id}                              {yylval.targetCode = new string(yytext);  Type return ID;}
+{id}                              {yylval.targetCode = new string(yytext);  return TOK_ID;}
 
-{digits}                          {yylval.targetDigitCode.targetCode = new string(yytext);yylval.targetDigitCode.isReal = 0; Type return NUM;}
-{num}                             {yylval.targetDigitCode.targetCode = new string(yytext);yylval.targetDigitCode.isReal = 1; Type return NUM;}
+{digits}                          {yylval.targetDigitCode.targetCode = new string(yytext);yylval.targetDigitCode.isReal = 0; return TOK_NUM;}
+{num}                             {yylval.targetDigitCode.targetCode = new string(yytext);yylval.targetDigitCode.isReal = 1; return TOK_NUM;}
+{charliteral}					  {yylval.targetCode = new string(yytext); return TOK_CHAR_LIT;}
 
 {annotation}                      {}
 {white_space}                     {}
-
-.                                 {cout<<yylineno<<"行：词法错误--非法字符"<<endl;}
+.                                 {cerr << "!ERROR!(" << yylineno << ")：词法错误--非法字符: " << yytext << endl;}
 
 
 %%
