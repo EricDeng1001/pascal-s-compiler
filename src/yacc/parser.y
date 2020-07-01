@@ -784,41 +784,375 @@ const_declaration: const_declaration ';' ID '=' const_value
 						t.type = BasicType::REAL;
 						t.is_constant = true;
 						Symbol sym(*($3.names), t);
-						pair<bool, int> res = sym_table.InsertSymbol(sym);
-						if(res.first == false) 
-						{
-							yyerror("符号 " + sym.name + " 重复定义");
-						}
-						else 
-						{	// 生成目标代码
-							tmp_target = 
-							string target = to_string($3.arrayTop - $3.arrayBottom  + 1);
-							if(i != ($1.names)->size() - 1)
-								tmp_target += " " + (*($1.names))[i] + "[" + target + "],";
+						if (!sym_table.isInGlobalScope())
+							{
+								const Symbol *const parent = sym_table.getParentSymbol();
+								if (parent->name == sym.name || sym_table.isInScope(sym.name))
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else
+								{
+									sym_table.InsertSymbol(sym);
+									tmp_target = tmp_target + 
+												"const double " + sym.name + " = " + *($5.targetCode) + ';';
+								}
+							}
 							else
-								tmp_target += " " + (*($1.names))[i] + "[" + target + "];\n";
-						}
+							{
+								// 插入到符号表
+								debugInfo("插入符号 " + sym.toString());
+								pair<bool, int> res = sym_table.InsertSymbol(sym);
+								if(res.first == false) 
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else 
+								{	// 生成目标代码
+									tmp_target = tmp_target + 
+												"const double " + sym.name + " = " + *($5.targetCode) + ';';
+								}
+							}
 					}else
 					{
-
+						t.type = BasicType::INTEGER;
+						t.is_constant = true;
+						Symbol sym(*($3.names), t);
+						if (!sym_table.isInGlobalScope())
+							{
+								const Symbol *const parent = sym_table.getParentSymbol();
+								if (parent->name == sym.name || sym_table.isInScope(sym.name))
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else
+								{
+									sym_table.InsertSymbol(sym);
+									tmp_target = tmp_target + 
+												"const int " + sym.name + " = " + *($5.targetCode) + ';';
+								}
+							}
+							else
+							{
+								// 插入到符号表
+								debugInfo("插入符号 " + sym.toString());
+								pair<bool, int> res = sym_table.InsertSymbol(sym);
+								if(res.first == false) 
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else 
+								{	// 生成目标代码
+									tmp_target = tmp_target + 
+												"const int " + sym.name + " = " + *($5.targetCode) + ';';
+								}
+							}
 					}
+					$$.targetCode = new string(tmp_target);
 					debugInfoBreak();
 				}
 				| const_declaration error ID '=' const_value
 				{
-
+					debugInfo("进入产生式 const_declaration: const_declaration error ID = const_value");
+					syntax_err_suply("两个常量定义语句间缺少分号");
+					string tmp_target = *($1.targetCode);
+					Type t{};
+					if($5.isReal)
+					{
+						t.type = BasicType::REAL;
+						t.is_constant = true;
+						Symbol sym(*($3.names), t);
+						if (!sym_table.isInGlobalScope())
+							{
+								const Symbol *const parent = sym_table.getParentSymbol();
+								if (parent->name == sym.name || sym_table.isInScope(sym.name))
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else
+								{
+									sym_table.InsertSymbol(sym);
+									tmp_target = tmp_target + 
+												"const double " + sym.name + " = " + *($5.targetCode) + ';';
+								}
+							}
+							else
+							{
+								// 插入到符号表
+								debugInfo("插入符号 " + sym.toString());
+								pair<bool, int> res = sym_table.InsertSymbol(sym);
+								if(res.first == false) 
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else 
+								{	// 生成目标代码
+									tmp_target = tmp_target + 
+												"const double " + sym.name + " = " + *($5.targetCode) + ';';
+								}
+							}
+					}else
+					{
+						t.type = BasicType::INTEGER;
+						t.is_constant = true;
+						Symbol sym(*($3.names), t);
+						if (!sym_table.isInGlobalScope())
+							{
+								const Symbol *const parent = sym_table.getParentSymbol();
+								if (parent->name == sym.name || sym_table.isInScope(sym.name))
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else
+								{
+									sym_table.InsertSymbol(sym);
+									tmp_target = tmp_target + 
+												"const int " + sym.name + " = " + *($5.targetCode) + ';';
+								}
+							}
+							else
+							{
+								// 插入到符号表
+								debugInfo("插入符号 " + sym.toString());
+								pair<bool, int> res = sym_table.InsertSymbol(sym);
+								if(res.first == false) 
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else 
+								{	// 生成目标代码
+									tmp_target = tmp_target + 
+												"const int " + sym.name + " = " + *($5.targetCode) + ';';
+								}
+							}
+					}
+					$$.targetCode = new string(tmp_target);
+					debugInfoBreak();
 				}
 				| const_declaration ';' ID error const_value
 				{
-
+					debugInfo("进入产生式 const_declaration: const_declaration ; ID error const_value");
+					syntax_err_suply("常量定义语句中缺少等号");
+					string tmp_target = *($1.targetCode);
+					Type t{};
+					if($5.isReal)
+					{
+						t.type = BasicType::REAL;
+						t.is_constant = true;
+						Symbol sym(*($3.names), t);
+						if (!sym_table.isInGlobalScope())
+							{
+								const Symbol *const parent = sym_table.getParentSymbol();
+								if (parent->name == sym.name || sym_table.isInScope(sym.name))
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else
+								{
+									sym_table.InsertSymbol(sym);
+									tmp_target = tmp_target + 
+												"const double " + sym.name + " = " + *($5.targetCode) + ';';
+								}
+							}
+							else
+							{
+								// 插入到符号表
+								debugInfo("插入符号 " + sym.toString());
+								pair<bool, int> res = sym_table.InsertSymbol(sym);
+								if(res.first == false) 
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else 
+								{	// 生成目标代码
+									tmp_target = tmp_target + 
+												"const double " + sym.name + " = " + *($5.targetCode) + ';';
+								}
+							}
+					}else
+					{
+						t.type = BasicType::INTEGER;
+						t.is_constant = true;
+						Symbol sym(*($3.names), t);
+						if (!sym_table.isInGlobalScope())
+							{
+								const Symbol *const parent = sym_table.getParentSymbol();
+								if (parent->name == sym.name || sym_table.isInScope(sym.name))
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else
+								{
+									sym_table.InsertSymbol(sym);
+									tmp_target = tmp_target + 
+												"const int " + sym.name + " = " + *($5.targetCode) + ';';
+								}
+							}
+							else
+							{
+								// 插入到符号表
+								debugInfo("插入符号 " + sym.toString());
+								pair<bool, int> res = sym_table.InsertSymbol(sym);
+								if(res.first == false) 
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else 
+								{	// 生成目标代码
+									tmp_target = tmp_target + 
+												"const int " + sym.name + " = " + *($5.targetCode) + ';';
+								}
+							}
+					}
+					$$.targetCode = new string(tmp_target);
+					debugInfoBreak();
 				}
 				| ID '=' const_value
 				{
-
+					debugInfo("进入产生式 const_declaration: ID = const_value");
+					string tmp_target;
+					Type t{};
+					if($3.isReal)
+					{
+						t.type = BasicType::REAL;
+						t.is_constant = true;
+						Symbol sym(*($1.names), t);
+						if (!sym_table.isInGlobalScope())
+							{
+								const Symbol *const parent = sym_table.getParentSymbol();
+								if (parent->name == sym.name || sym_table.isInScope(sym.name))
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else
+								{
+									sym_table.InsertSymbol(sym);
+									tmp_target = "const double " + sym.name + " = " + *($3.targetCode) + ';';
+								}
+							}
+							else
+							{
+								// 插入到符号表
+								debugInfo("插入符号 " + sym.toString());
+								pair<bool, int> res = sym_table.InsertSymbol(sym);
+								if(res.first == false) 
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else 
+								{	// 生成目标代码
+									tmp_target = "const double " + sym.name + " = " + *($3.targetCode) + ';';
+								}
+							}
+					}else
+					{
+						t.type = BasicType::INTEGER;
+						t.is_constant = true;
+						Symbol sym(*($1.names), t);
+						if (!sym_table.isInGlobalScope())
+							{
+								const Symbol *const parent = sym_table.getParentSymbol();
+								if (parent->name == sym.name || sym_table.isInScope(sym.name))
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else
+								{
+									sym_table.InsertSymbol(sym);
+									tmp_target = "const int " + sym.name + " = " + *($3.targetCode) + ';';
+								}
+							}
+							else
+							{
+								// 插入到符号表
+								debugInfo("插入符号 " + sym.toString());
+								pair<bool, int> res = sym_table.InsertSymbol(sym);
+								if(res.first == false) 
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else 
+								{	// 生成目标代码
+									tmp_target = "const int " + sym.name + " = " + *($3.targetCode) + ';';
+								}
+							}
+					}
+					$$.targetCode = new string(tmp_target);
+					debugInfoBreak();
 				}
 				| ID error const_value
 				{
-
+					debugInfo("进入产生式 const_declaration: ID error const_value");
+					syntax_err_suply("常量定义语句中缺少等号");
+					string tmp_target;
+					Type t{};
+					if($3.isReal)
+					{
+						t.type = BasicType::REAL;
+						t.is_constant = true;
+						Symbol sym(*($1.names), t);
+						if (!sym_table.isInGlobalScope())
+							{
+								const Symbol *const parent = sym_table.getParentSymbol();
+								if (parent->name == sym.name || sym_table.isInScope(sym.name))
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else
+								{
+									sym_table.InsertSymbol(sym);
+									tmp_target = "const double " + sym.name + " = " + *($3.targetCode) + ';';
+								}
+							}
+							else
+							{
+								// 插入到符号表
+								debugInfo("插入符号 " + sym.toString());
+								pair<bool, int> res = sym_table.InsertSymbol(sym);
+								if(res.first == false) 
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else 
+								{	// 生成目标代码
+									tmp_target = "const double " + sym.name + " = " + *($3.targetCode) + ';';
+								}
+							}
+					}else
+					{
+						t.type = BasicType::INTEGER;
+						t.is_constant = true;
+						Symbol sym(*($1.names), t);
+						if (!sym_table.isInGlobalScope())
+							{
+								const Symbol *const parent = sym_table.getParentSymbol();
+								if (parent->name == sym.name || sym_table.isInScope(sym.name))
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else
+								{
+									sym_table.InsertSymbol(sym);
+									tmp_target = "const int " + sym.name + " = " + *($3.targetCode) + ';';
+								}
+							}
+							else
+							{
+								// 插入到符号表
+								debugInfo("插入符号 " + sym.toString());
+								pair<bool, int> res = sym_table.InsertSymbol(sym);
+								if(res.first == false) 
+								{
+									yyerror("符号 " + sym.name + " 重复定义");
+								}
+								else 
+								{	// 生成目标代码
+									tmp_target = "const int " + sym.name + " = " + *($3.targetCode) + ';';
+								}
+							}
+					}
+					$$.targetCode = new string(tmp_target);
+					debugInfoBreak();
 				};
 
 const_value: '+' TOK_NUM

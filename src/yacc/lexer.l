@@ -30,6 +30,7 @@ annotation        {block_annotation}|{line_annotation}
 
 
 program                           {yylval.targetCode = new string(yytext); return TOK_PROGRAM;}
+const							  {yylval.targetCode = new string(yytext); return TOK_CONST;}
 var								  {yylval.targetCode = new string(yytext); return TOK_VAR;}
 array                             {yylval.targetCode = new string(yytext); return TOK_ARRAY;}
 of                                {yylval.targetCode = new string(yytext); return TOK_OF;}
