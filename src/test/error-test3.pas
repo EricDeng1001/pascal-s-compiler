@@ -18,7 +18,7 @@ end;
 begin
     x <> y + x;
     read(x, y);
-    write(gcd(x, y));
+    write(gcd(x, y, x, z))
     while x = y gcd(x, y)
 end
 
