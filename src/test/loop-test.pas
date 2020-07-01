@@ -1,17 +1,19 @@
 program Loop;
-var
-   a, number, sum: integer;
-   
+var a, number, sum: integer;
+ub, lb, step: integer;
 begin
    for a := 10 to 20 do
    begin
       write('value of a: ', a, '\n')
    end;
-   number := 10;
+   ub := 10;
+   step := -2;
+   number := ub;
    sum := 0;
-   while number>0 do
-      begin
-       sum := sum + number;
-       number := number - 2
-      end
+   while number > lb do
+   begin
+      sum := sum + number;
+      number := number + step
+   end;
+   write('sum of 2 + 4 + ... + 10 is ', sum, '\n')
 end.

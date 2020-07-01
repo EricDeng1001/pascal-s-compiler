@@ -36,9 +36,19 @@ begin
        end
 end;
 begin
-    read(m);
+    m := 1000;
+    
+    while (m <= 0) or (m > (101 - 1)) do
+    begin
+        write('输入待排序的数的个数: ');
+        read(m);
+        if (m <= 0) or (m > (101 - 1)) then
+            write('数字太小或者太大, 请重新输入', '\n')
+    end;
+
     k := 1;
-    while(k<=m) do 
+    write('输入 ', m , ' 个数字, 以空格分隔', '\n');
+    while(k <= m) do 
     begin
 		
          read(tempOut);

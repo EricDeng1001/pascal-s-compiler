@@ -8,8 +8,13 @@ begin
     y := tmp
 end;
 begin
-    read(x, y);
+    write('函数参数为传值时: ', 'exchange(x, y:integer)', '\n');
+    write('输入两个数字, 以空格分隔', '\n');
+    write('x = ');
+    read(x);
+    write('y = ');
+    read(y);
     exchange(x, y);
-    write(x, ' ', y, '\n')
+    write('交换后 x = ', x, ', y = ', y, '\n')
 end.
 

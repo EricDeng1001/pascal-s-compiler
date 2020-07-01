@@ -1,5 +1,5 @@
-program test(input, output);
-var x,y: integer;
+program test(input output);
+x,y: integer;
 int: integer;
 bol : boolean;
 chr: char;

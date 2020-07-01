@@ -21,8 +21,8 @@ num               {digits}{fraction}{exponent}
 
 letter            [A-Za-z]
 id                {letter}({letter}|{digit})*
-charliteral       '([A-Za-z :,\.]|(\\n)|(\\t))+'
-block_annotation  \{\*.*\*\}
+charliteral       '([^']|(\\'))+'
+block_annotation  \{\*[.\n]*\*\}
 line_annotation   \{.*\}
 annotation        {block_annotation}|{line_annotation}
 

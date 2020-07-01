@@ -4,6 +4,7 @@ var arr: array[1..10] of integer;
     procedure ReadArray;
     var i: integer;
     begin
+        write('请输入 10 个数字, 以空格分隔', '\n');
         for i := 1 to 10 do read(arr[i])
     end;
 

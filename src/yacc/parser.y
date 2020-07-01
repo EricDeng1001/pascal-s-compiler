@@ -2252,7 +2252,7 @@ term: term TOK_MULOP factor
           			  	  	}
           			  	    $$.targetCode = new string(*($1.targetCode) + *($2) + *($3.targetCode));
           			  	    $$.type = new Type();
-          			  	    $$.type->type = BasicType::INVALID;
+          			  	    $$.type->type = BasicType::BOOLEAN;
           			  	} 
 						else if (*($2) == "div") 
 						{
