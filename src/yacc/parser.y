@@ -254,6 +254,15 @@ declarations: TOK_VAR declaration ';'
 					$$ = new string(*($2));
 					debugInfoBreak();
 				}
+				| error declaration ';'
+				{
+					// WARNING: CAUSES SR CONFLICT
+					debugInfo("进入产生式 declarations: TOK_VAR declaration ';'");
+					syntax_err_suply("声明前缺少 VAR");
+					yyerrok;
+					$$ = new string(*($2));
+					debugInfoBreak();
+				}
 				|
 				{
 					debugInfo("进入产生式 declarations: ");
@@ -1541,6 +1550,21 @@ optional_statements: statement_list
 
 statement_list: statement_list ';' statement
 				{
+					$$ = new string(*($1));
+					$$->append(*($3) + "\n");
+				}
+				| statement_list error statement
+				{
+					syntax_err_suply("语句后缺少分号");
+					yyerrok;
+					$$ = new string(*($1));
+					$$->append(*($3) + "\n");
+				}
+				| statement_list ';' statement error
+				{
+					// WARNING: CAUSES SR CONFLICT
+					syntax_err_suply("最后一条语句后有分号");
+					yyerrok;
 					$$ = new string(*($1));
 					$$->append(*($3) + "\n");
 				}
