@@ -33,7 +33,6 @@ program                           {yylval.targetCode = new string(yytext); retur
 var								  {yylval.targetCode = new string(yytext); return TOK_VAR;}
 array                             {yylval.targetCode = new string(yytext); return TOK_ARRAY;}
 of                                {yylval.targetCode = new string(yytext); return TOK_OF;}
-record                            {yylval.targetCode = new string(yytext); return TOK_RECORD;}
 integer                           {yylval.targetCode = new string(yytext); return TOK_INTEGER;}
 real                              {yylval.targetCode = new string(yytext); return TOK_REAL;}
 boolean                           {yylval.targetCode = new string(yytext); return TOK_BOOLEAN;}
